@@ -1,13 +1,18 @@
 # :arrows_clockwise: Microsoft Azure As Built Report Changelog
 
-## [Unreleased]
+## [0.3.1] - 2026-07-??
 
 ### Added
-* Add support for Virtual Network hub-spoke topology diagrams (`Get-AbrAzNetworkTopology`), rendered once per tenant alongside the Management Group diagram. A Virtual Network is treated as a hub if it has 3 or more peering connections, or hosts a Virtual Network Gateway, Azure Firewall, or Network Virtual Appliance; hub detection is collected independently of those sections' own `InfoLevel` settings, so a hub is never misclassified as a spoke because one of those sections is disabled elsewhere in the report. Includes a fallback summary table when diagrams are disabled. All Virtual Network, peering, Gateway, Firewall, and NVA data is collected independently of every other section's `InfoLevel`; only `InfoLevel.NetworkTopology` itself controls the feature.
+* Add support for Virtual Network hub-spoke topology information and diagrams
 
 ### Changed
 * Extract NVA detection logic shared by `Get-AbrAzNetworkVirtualAppliance` and `Get-AbrAzNetworkTopology` into `Test-AbrAzNvaVm`
 
+### Fixed
+* Fix `Get-AbrAzLbFrontendIpConfig` - Resolve `PublicIPAddress` to the associated public IP resource name
+
+### Removed
+* Remove X/Tweet post action in `Release.yml` pipeline
 
 ## [0.3.0] - 2026-07-13
 
