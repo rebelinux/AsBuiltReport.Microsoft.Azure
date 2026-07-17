@@ -499,6 +499,10 @@ Describe 'AsBuiltReport.Microsoft.Azure Module Tests' {
             $PrivateFunctions.Name | Should -Contain 'Get-AbrDiagAzNetworkTopology.ps1'
         }
 
+        It 'Should have Get-AbrAzNetworkTopology function' {
+            $PrivateFunctions.Name | Should -Contain 'Get-AbrAzNetworkTopology.ps1'
+        }
+
         It 'Should have Get-AbrAzNetworkWatcher function' {
             $PrivateFunctions.Name | Should -Contain 'Get-AbrAzNetworkWatcher.ps1'
         }
