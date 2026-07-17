@@ -491,6 +491,10 @@ Describe 'AsBuiltReport.Microsoft.Azure Module Tests' {
             $PrivateFunctions.Name | Should -Contain 'Get-AbrAzNetworkVirtualAppliance.ps1'
         }
 
+        It 'Should have Test-AbrAzNvaVm function' {
+            $PrivateFunctions.Name | Should -Contain 'Test-AbrAzNvaVm.ps1'
+        }
+
         It 'Should have Get-AbrAzNetworkWatcher function' {
             $PrivateFunctions.Name | Should -Contain 'Get-AbrAzNetworkWatcher.ps1'
         }

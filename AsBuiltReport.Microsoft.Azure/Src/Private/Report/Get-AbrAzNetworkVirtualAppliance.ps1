@@ -72,16 +72,12 @@ function Get-AbrAzNetworkVirtualAppliance {
                 $NvaVms = @()
 
                 foreach ($AzVm in $AzVms) {
-                    $ImageRef   = $AzVm.StorageProfile.ImageReference
-                    $IsNvaByImg = $ImageRef.Publisher -and ($NvaPublishers -contains $ImageRef.Publisher.ToLower())
+                    $ImageRef = $AzVm.StorageProfile.ImageReference
+                    $NvaCheck = Test-AbrAzNvaVm -VM $AzVm -NvaPublishers $NvaPublishers -NvaTagKey $NvaTagKey -NvaTagValue $NvaTagValue
+                    $IsNvaByImg = $NvaCheck.IsNvaByImg
+                    $IsNvaByTag = $NvaCheck.IsNvaByTag
 
-                    $IsNvaByTag = $false
-                    if ($NvaTagKey) {
-                        $TagVal = $AzVm.Tags[$NvaTagKey]
-                        $IsNvaByTag = if ($NvaTagValue) { $TagVal -eq $NvaTagValue } else { $null -ne $TagVal }
-                    }
-
-                    if (-not ($IsNvaByImg -or $IsNvaByTag)) { continue }
+                    if (-not $NvaCheck.IsNva) { continue }
 
                     Write-PScriboMessage ($LocalizedData.Processing -f $AzVm.Name)
 
