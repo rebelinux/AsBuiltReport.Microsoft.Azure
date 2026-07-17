@@ -10,10 +10,11 @@ Only one dynamic, data-driven topology diagram exists in the module today (Manag
 
 ## Architecture
 
-Two new functions, following the existing MG diagram split between orchestration (`Src/Private/Report/`) and diagram builder (`Src/Private/Diagram/`):
+Three new functions, following the existing MG diagram split between orchestration (`Src/Private/Report/`) and diagram builder (`Src/Private/Diagram/`):
 
 - `Src/Private/Report/Get-AbrAzNetworkTopology.ps1` — orchestration/section function, mirrors `Get-AbrAzManagementGroup.ps1`
 - `Src/Private/Diagram/Get-AbrDiagAzNetworkTopology.ps1` — diagram builder, mirrors `Get-AbrDiagAzManagementGroup.ps1`
+- `Src/Private/Report/Test-AbrAzNvaVm.ps1` — new shared helper extracted from `Get-AbrAzNetworkVirtualAppliance.ps1`'s existing inline NVA detection (see "Refactor: shared NVA detection" below)
 
 ### Report flow placement
 
@@ -42,8 +43,21 @@ For each subscription in `$AzSubscriptions` (respecting `Filter.Subscription`):
 3. `Get-AzVirtualNetworkPeering` (per VNet) — collect `RemoteVirtualNetwork.Id`, `PeeringState`
 4. `Get-AzVirtualNetworkGateway` — collect `IpConfigurations[0].Subnet.Id`, parsed the same way `Get-AbrAzVirtualNetworkGateway.ps1` already does, to determine which VNet hosts a gateway
 5. `Get-AzFirewall` — collect `IpConfigurations[0].Subnet.Id` similarly, to determine which VNet hosts a firewall
+6. `Get-AzVirtualMachine` — for each VM, resolve its primary NIC's `Subnet.Id` (same parsing `Get-AbrAzNetworkVirtualAppliance.ps1:97-99` already does) and pass the VM through the new `Test-AbrAzNvaVm` helper to determine which VNet hosts an NVA
 
 All data is collected into an in-memory list before any PScribo output, consistent with the module's coding standards.
+
+## Refactor: shared NVA detection
+
+`Get-AbrAzNetworkVirtualAppliance.ps1` currently determines "is this VM an NVA" inline (lines 33-81): a `$DefaultNvaPublishers` list, resolution of `Options.NvaPublishers`/`Options.NvaTag`, and `$IsNvaByImg`/`$IsNvaByTag` matching against `$AzVm.StorageProfile.ImageReference.Publisher` and `$AzVm.Tags`. The new Network Topology diagram needs the identical check to flag NVA-fronted hubs. Rather than duplicate this logic (which would silently drift if a user sets `Options.NvaPublishers`/`NvaTag` and only one of the two call sites honored it), extract it into:
+
+```
+Src/Private/Report/Test-AbrAzNvaVm.ps1
+```
+
+Signature: `Test-AbrAzNvaVm -VM <PSVirtualMachine> -NvaPublishers <string[]> -NvaTagKey <string> -NvaTagValue <string>` → returns `$true`/`$false` (or an object with `IsNva`/`DetectionMethod` if `Get-AbrAzNetworkVirtualAppliance.ps1`'s existing `DetectedByPublisher`/tag-identified messaging needs to keep working — to be confirmed during implementation against the exact return shape the existing caller needs).
+
+`Get-AbrAzNetworkVirtualAppliance.ps1` is updated to call this helper instead of its inline logic (pure refactor, no behavior change). `Get-AbrAzNetworkTopology.ps1` calls the same helper during its pre-pass.
 
 ## Filtering & hub detection
 
@@ -52,14 +66,15 @@ All data is collected into an in-memory list before any PScribo output, consiste
 3. A VNet is flagged as a **hub** if any of the following is true:
    - It has 3 or more peering connections, OR
    - It hosts a Virtual Network Gateway, OR
-   - It hosts an Azure Firewall
+   - It hosts an Azure Firewall, OR
+   - It hosts a VM identified as an NVA by `Test-AbrAzNvaVm` (per `Options.NvaPublishers` / `Options.NvaTag`)
    Everything else is a **spoke**. This is a rendering/emphasis decision only — it does not alter the underlying peering edges, so a topology that is not truly hub-spoke (e.g. a mesh, or an isolated pair) simply renders with no node emphasized differently.
 
 ## Diagram construction
 
 Built using `Add-HtmlNodeTable` from `AsBuiltReport.Diagram`, following the exact pattern `Get-AbrDiagAzManagementGroup.ps1` already uses:
 
-- **Hub nodes**: larger icon size (`IconWidth`/`IconHeight` increased relative to spokes), VNet name, address space, subscription name as a subtitle row. Badge icons (`Gateway`, `Firewall`) added to the node table when applicable.
+- **Hub nodes**: larger icon size (`IconWidth`/`IconHeight` increased relative to spokes), VNet name, address space, subscription name as a subtitle row. Badge icons (`Gateway`, `Firewall`, `NVA`) added to the node table when applicable — a hub can show more than one badge (e.g. an NVA behind a Gateway-connected hub).
 - **Spoke nodes**: standard icon size, VNet name, address space, subscription name as a subtitle row.
 - **Subscription grouping**: spokes belonging to the same subscription are grouped using `Add-HtmlNodeTable -Subgraph`, the same mechanism the MG diagram uses to cluster subscriptions under a management group.
 - **Edges**: one `Edge` per peering.
@@ -75,7 +90,8 @@ Sourced by the user from the official Azure Architecture Icons set (same approac
 |---|---|---|
 | `VNet` | `virtual-networks.png` | standard VNet/spoke node, and hub node (rendered larger) |
 | `Gateway` | `virtual-network-gateways.png` | badge on hub nodes with a gateway |
-| `Firewall` | `firewalls.png` | badge on hub nodes with a firewall |
+| `Firewall` | `firewalls.png` | badge on hub nodes with an Azure Firewall |
+| `NVA` | *(to be sourced — no third-party NVA vendor icon exists in the module today; a generic "network virtual appliance" icon from the Azure Architecture Icons set is expected, not a vendor-specific logo, since `Options.NvaPublishers` can match several vendors)* | badge on hub nodes with an NVA (Palo Alto, Fortinet, Cisco, etc. — detected via `Test-AbrAzNvaVm`) |
 
 `virtual-wan-hub.png` has already been sourced and may be added to the module's `Icons/` folder now, but **Virtual WAN Hub topology is explicitly out of scope for this feature**. See "Future considerations" below.
 
@@ -97,12 +113,14 @@ Sourced by the user from the official Azure Architecture Icons set (same approac
 ## Testing
 
 New Pester tests, following the pattern used for the v0.3.0 section backfill (`7f63ba6`):
-- Mock `Get-AzVirtualNetwork`, `Get-AzVirtualNetworkPeering`, `Get-AzVirtualNetworkGateway`, `Get-AzFirewall` across two or three fake subscriptions
-- Verify hub detection logic (peering-count threshold, gateway presence, firewall presence)
+- Mock `Get-AzVirtualNetwork`, `Get-AzVirtualNetworkPeering`, `Get-AzVirtualNetworkGateway`, `Get-AzFirewall`, `Get-AzVirtualMachine` across two or three fake subscriptions
+- Verify hub detection logic (peering-count threshold, gateway presence, Azure Firewall presence, NVA presence via publisher match and via `NvaTag` fallback)
 - Verify connected vs. disconnected edge styling
 - Verify isolated (zero-peering) VNets are excluded
 - Verify graceful no-op when `Options.EnableDiagrams` is `$false`
 - Verify graceful no-op when no VNet anywhere has a peering
+- `Test-AbrAzNvaVm` gets its own dedicated unit tests (publisher match, tag-key-only match, tag-key+value match, no match)
+- Regression test confirming `Get-AbrAzNetworkVirtualAppliance.ps1`'s existing NVA-detection test coverage still passes unchanged after the refactor to call `Test-AbrAzNvaVm`
 
 ## Out of scope / Future considerations
 
