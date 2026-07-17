@@ -262,6 +262,7 @@ function Invoke-AsBuiltReport.Microsoft.Azure {
                 Section -Style Heading1 $($AzTenant.Name) {
                     Get-AbrAzTenant
                     Get-AbrAzManagementGroup
+                    Get-AbrAzNetworkTopology
                     Section -Style Heading2 $LocalizedData.Subscriptions {
                         Get-AbrAzSubscription
 
