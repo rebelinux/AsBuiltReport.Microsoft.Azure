@@ -515,6 +515,10 @@ Describe 'AsBuiltReport.Microsoft.Azure Module Tests' {
             $PrivateFunctions.Name | Should -Contain 'Get-AbrAzVmScaleSet.ps1'
         }
 
+        It 'Should have Resolve-AbrVNetIdFromSubnetId function' {
+            $PrivateFunctions.Name | Should -Contain 'Resolve-AbrVNetIdFromSubnetId.ps1'
+        }
+
     }
 
     Context 'JSON Configuration' {
