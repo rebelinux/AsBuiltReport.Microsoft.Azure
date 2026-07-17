@@ -87,6 +87,7 @@
         "ManagementGroup": 1,
         "NetAppFiles": 1,
         "NetworkSecurityGroup": 1,
+        "NetworkTopology": 1,
         "NetworkVirtualAppliance": 1,
         "NetworkWatcher": 1,
         "Policy": {

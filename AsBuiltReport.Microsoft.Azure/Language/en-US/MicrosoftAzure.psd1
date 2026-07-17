@@ -1474,6 +1474,33 @@ GetAbrAzManagementGroup = ConvertFrom-StringData @'
     ErrorMessage          = Unable to collect Management Group information:
 '@
 
+# Azure Network Topology (Get-AbrAzNetworkTopology)
+GetAbrAzNetworkTopology = ConvertFrom-StringData @'
+    InfoLevel             = NetworkTopology InfoLevel set at {0}.
+    Collecting            = Collecting Azure Virtual Network hub-spoke topology information.
+    SectionInfo           = This diagram shows Virtual Network peering topology across all subscriptions in the tenant. A Virtual Network is treated as a hub if it has 3 or more peering connections, or hosts a Virtual Network Gateway, Azure Firewall, or Network Virtual Appliance; hub badges reflect only the sections currently enabled in InfoLevel, so a hub may appear without a visible reason if the relevant section is disabled. Virtual Networks with no peering connections are not shown; they remain fully documented in each subscription's Virtual Network section.
+    Heading               = Network Topology
+    TableHeading          = Virtual Network Topology
+    DiagramHeading        = Virtual Network Hub-Spoke Topology
+    DiagramAltText        = Azure virtual network hub-and-spoke topology diagram
+    DiagramError          = Unable to generate Network Topology diagram: {0}.
+    SubscriptionError     = Unable to collect Network Topology information for subscription {0}: {1}.
+    NoPeeredVNets         = No peered Virtual Networks found across any subscription; skipping Network Topology section.
+    Name                  = Name
+    ResourceGroup         = Resource Group
+    Subscription          = Subscription
+    Location              = Location
+    AddressSpace          = Address Space
+    Role                  = Role
+    Hub                   = Hub
+    Spoke                 = Spoke
+    PeerCount             = Peering Count
+    Gateway               = Gateway
+    Firewall              = Firewall
+    Nva                   = NVA
+    ErrorMessage          = Unable to collect Network Topology information:
+'@
+
 # Azure Private DNS Zones (Get-AbrAzPrivateDnsZone)
 GetAbrAzPrivateDnsZone = ConvertFrom-StringData @'
     InfoLevel = PrivateDnsZone InfoLevel set at {0}.

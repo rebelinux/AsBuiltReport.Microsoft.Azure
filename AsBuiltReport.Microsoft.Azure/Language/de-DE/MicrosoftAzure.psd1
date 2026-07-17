@@ -1474,6 +1474,33 @@ GetAbrAzManagementGroup = ConvertFrom-StringData @'
     ErrorMessage          = Fehler beim Sammeln von Management Group-Informationen:
 '@
 
+# Azure Network Topology (Get-AbrAzNetworkTopology)
+GetAbrAzNetworkTopology = ConvertFrom-StringData @'
+    InfoLevel             = NetworkTopology InfoLevel auf {0} gesetzt.
+    Collecting            = Sammlung von Informationen zur Hub-Spoke-Topologie des virtuellen Azure-Netzwerks.
+    SectionInfo           = Dieses Diagramm zeigt die Peering-Topologie virtueller Netzwerke über alle Abonnements im Mandanten hinweg. Ein virtuelles Netzwerk wird als Hub betrachtet, wenn es 3 oder mehr Peering-Verbindungen hat oder ein Virtual Network Gateway, eine Azure Firewall oder eine Network Virtual Appliance hostet. Hub-Kennzeichnungen spiegeln nur die derzeit im InfoLevel aktivierten Abschnitte wider, sodass ein Hub ohne erkennbaren Grund angezeigt werden kann, wenn der entsprechende Abschnitt deaktiviert ist. Virtuelle Netzwerke ohne Peering-Verbindungen werden nicht angezeigt; sie werden weiterhin vollständig im Abschnitt "Virtuelles Netzwerk" des jeweiligen Abonnements dokumentiert.
+    Heading               = Netzwerktopologie
+    TableHeading          = Topologie des virtuellen Netzwerks
+    DiagramHeading        = Hub-Spoke-Topologie des virtuellen Netzwerks
+    DiagramAltText        = Diagramm der Hub-Spoke-Topologie des virtuellen Azure-Netzwerks
+    DiagramError          = Kann Netzwerktopologie-Diagramm nicht generieren: {0}.
+    SubscriptionError     = Netzwerktopologie-Informationen fuer Abonnement {0} koennen nicht gesammelt werden: {1}.
+    NoPeeredVNets         = Keine gepeerten virtuellen Netzwerke in einem Abonnement gefunden; Abschnitt Netzwerktopologie wird uebersprungen.
+    Name                  = Name
+    ResourceGroup         = Ressourcengruppe
+    Subscription          = Abonnement
+    Location              = Standort
+    AddressSpace          = Adressraum
+    Role                  = Rolle
+    Hub                   = Hub
+    Spoke                 = Spoke
+    PeerCount             = Anzahl Peerings
+    Gateway               = Gateway
+    Firewall              = Firewall
+    Nva                   = NVA
+    ErrorMessage          = Netzwerktopologie-Informationen koennen nicht gesammelt werden:
+'@
+
 # Azure Private DNS Zones (Get-AbrAzPrivateDnsZone)
 GetAbrAzPrivateDnsZone = ConvertFrom-StringData @'
     InfoLevel = PrivateDnsZone-InfoLevel auf {0} gesetzt.

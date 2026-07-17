@@ -1474,6 +1474,33 @@ GetAbrAzManagementGroup = ConvertFrom-StringData @'
     ErrorMessage          = No se puede recopilar información del grupo de administración:
 '@
 
+# Azure Network Topology (Get-AbrAzNetworkTopology)
+GetAbrAzNetworkTopology = ConvertFrom-StringData @'
+    InfoLevel             = InfoLevel de topologia de red establecido en {0}.
+    Collecting            = Recopilando informacion de topologia hub-spoke de red virtual de Azure.
+    SectionInfo           = Este diagrama muestra la topologia de emparejamiento de redes virtuales en todas las suscripciones del inquilino. Una red virtual se considera un concentrador (hub) si tiene 3 o mas conexiones de emparejamiento, o si aloja una puerta de enlace de red virtual, un Azure Firewall o un dispositivo virtual de red. Las etiquetas de concentrador reflejan unicamente las secciones actualmente habilitadas en InfoLevel, por lo que un concentrador puede aparecer sin un motivo visible si la seccion correspondiente esta deshabilitada. Las redes virtuales sin conexiones de emparejamiento no se muestran; permanecen totalmente documentadas en la seccion de red virtual de cada suscripcion.
+    Heading               = Topologia de red
+    TableHeading          = Topologia de red virtual
+    DiagramHeading        = Topologia hub-spoke de red virtual
+    DiagramAltText        = Diagrama de topologia hub-spoke de red virtual de Azure
+    DiagramError          = No se puede generar el diagrama de topologia de red: {0}.
+    SubscriptionError     = No se puede recopilar informacion de topologia de red para la suscripcion {0}: {1}.
+    NoPeeredVNets         = No se encontraron redes virtuales emparejadas en ninguna suscripcion; se omite la seccion de topologia de red.
+    Name                  = Nombre
+    ResourceGroup         = Grupo de recursos
+    Subscription          = Suscripcion
+    Location              = Ubicacion
+    AddressSpace          = Espacio de direcciones
+    Role                  = Rol
+    Hub                   = Concentrador
+    Spoke                 = Radial
+    PeerCount             = Numero de emparejamientos
+    Gateway               = Puerta de enlace
+    Firewall              = Firewall
+    Nva                   = NVA
+    ErrorMessage          = No se puede recopilar informacion de topologia de red:
+'@
+
 # Azure Private DNS Zones (Get-AbrAzPrivateDnsZone)
 GetAbrAzPrivateDnsZone = ConvertFrom-StringData @'
     InfoLevel = InfoLevel de zona DNS privada establecido en {0}.

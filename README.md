@@ -350,6 +350,7 @@ The table below outlines the default and maximum **InfoLevel** settings for each
 | ManagementGroup             |        1        |        1        |
 | NetAppFiles                 |        1        |        4        |
 | NetworkSecurityGroup        |        1        |        2        |
+| NetworkTopology             |        1        |        1        |
 | NetworkVirtualAppliance     |        1        |        3        |
 | NetworkWatcher              |        1        |        2        |
 | Policy > Assignments        |        1        |        2        |
@@ -367,6 +368,8 @@ The table below outlines the default and maximum **InfoLevel** settings for each
 | VirtualNetwork              |        1        |        2        |
 | VirtualNetworkGateway       |        1        |        2        |
 | VmScaleSet                  |        1        |        2        |
+
+> **Note:** `NetworkTopology` also requires `VirtualNetwork` to be set to `2` or higher — the topology diagram is built from Virtual Network peering detail, which is only collected at that level. Its Gateway/Firewall/NVA hub-detection badges additionally require `VirtualNetworkGateway`, `Firewall`, and `NetworkVirtualAppliance` respectively to be enabled (`1` or higher); a disabled section is simply skipped for hub detection, not treated as an error.
 
 ### Healthcheck
 The **Healthcheck** schema is used to toggle health checks on or off.

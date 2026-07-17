@@ -1474,6 +1474,33 @@ GetAbrAzManagementGroup = ConvertFrom-StringData @'
     ErrorMessage          = Impossible de collecter les informations du groupe de gestion:
 '@
 
+# Azure Network Topology (Get-AbrAzNetworkTopology)
+GetAbrAzNetworkTopology = ConvertFrom-StringData @'
+    InfoLevel             = InfoLevel de la topologie reseau defini a {0}.
+    Collecting            = Collecte des informations de topologie hub-spoke du reseau virtuel Azure.
+    SectionInfo           = Ce diagramme montre la topologie d'appairage des reseaux virtuels dans tous les abonnements du locataire. Un reseau virtuel est considere comme un hub s'il possede 3 appairages ou plus, ou s'il heberge une passerelle de reseau virtuel, un Azure Firewall ou une appliance virtuelle reseau. Les indicateurs de hub refletent uniquement les sections actuellement activees dans InfoLevel ; un hub peut donc apparaitre sans raison visible si la section correspondante est desactivee. Les reseaux virtuels sans appairage ne sont pas affiches ; ils restent entierement documentes dans la section reseau virtuel de chaque abonnement.
+    Heading               = Topologie reseau
+    TableHeading          = Topologie du reseau virtuel
+    DiagramHeading        = Topologie hub-spoke du reseau virtuel
+    DiagramAltText        = Diagramme de topologie hub-spoke du reseau virtuel Azure
+    DiagramError          = Impossible de generer le diagramme de topologie reseau : {0}.
+    SubscriptionError     = Impossible de collecter les informations de topologie reseau pour l'abonnement {0} : {1}.
+    NoPeeredVNets         = Aucun reseau virtuel apparie trouve dans un abonnement ; section topologie reseau ignoree.
+    Name                  = Nom
+    ResourceGroup         = Groupe de ressources
+    Subscription          = Abonnement
+    Location              = Emplacement
+    AddressSpace          = Espace d'adressage
+    Role                  = Role
+    Hub                   = Hub
+    Spoke                 = Spoke
+    PeerCount             = Nombre d'appairages
+    Gateway               = Passerelle
+    Firewall              = Pare-feu
+    Nva                   = NVA
+    ErrorMessage          = Impossible de collecter les informations de topologie reseau :
+'@
+
 # Azure Private DNS Zones (Get-AbrAzPrivateDnsZone)
 GetAbrAzPrivateDnsZone = ConvertFrom-StringData @'
     InfoLevel = InfoLevel de zone DNS privee defini a {0}.

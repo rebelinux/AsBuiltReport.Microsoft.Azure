@@ -666,6 +666,10 @@ Describe 'AsBuiltReport.Microsoft.Azure Module Tests' {
             $JsonConfig.InfoLevel.PSObject.Properties.Name | Should -Contain 'ManagementGroup'
         }
 
+        It 'InfoLevel should include NetworkTopology' {
+            $JsonConfig.InfoLevel.PSObject.Properties.Name | Should -Contain 'NetworkTopology'
+        }
+
         It 'InfoLevel should include UserAssignedManagedIdentity' {
             $JsonConfig.InfoLevel.PSObject.Properties.Name | Should -Contain 'UserAssignedManagedIdentity'
         }
