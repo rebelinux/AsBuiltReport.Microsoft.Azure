@@ -65,6 +65,7 @@ The Microsoft Azure As Built Report currently supports reporting for the followi
 * Maintenance Configurations
 * Management Groups
 * NetApp Files
+* Network Topology (hub-spoke diagram)
 * Network Virtual Appliances
 * Network Watchers
 * Policies
