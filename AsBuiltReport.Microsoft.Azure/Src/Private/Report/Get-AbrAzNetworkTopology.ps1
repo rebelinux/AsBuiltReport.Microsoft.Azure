@@ -94,51 +94,45 @@ function Get-AbrAzNetworkTopology {
                             })
                     }
 
-                    if ($InfoLevel.VirtualNetworkGateway -ge 1) {
-                        try {
-                            # Get-AzVirtualNetworkGateway requires -ResourceGroupName in every parameter
-                            # set (no subscription-wide listing), so enumerate via Get-AzResource first,
-                            # same pattern used in Get-AbrAzVirtualNetworkGateway.ps1.
-                            $Gateways = Get-AzResource -ResourceType 'Microsoft.Network/virtualNetworkGateways' -ErrorAction Stop |
-                                ForEach-Object { Get-AzVirtualNetworkGateway -Name $_.Name -ResourceGroupName $_.ResourceGroupName -ErrorAction Stop }
-                        } catch {
-                            $Gateways = @()
-                        }
-                        foreach ($Gateway in $Gateways) {
-                            $GwVNetId = Resolve-AbrVNetIdFromSubnetId -SubnetId $Gateway.IpConfigurations[0].Subnet.Id
-                            if ($GwVNetId) { [void]$VNetsWithGateway.Add($GwVNetId.ToLower()) }
-                        }
+                    try {
+                        # Get-AzVirtualNetworkGateway requires -ResourceGroupName in every parameter
+                        # set (no subscription-wide listing), so enumerate via Get-AzResource first,
+                        # same pattern used in Get-AbrAzVirtualNetworkGateway.ps1.
+                        $Gateways = Get-AzResource -ResourceType 'Microsoft.Network/virtualNetworkGateways' -ErrorAction Stop |
+                            ForEach-Object { Get-AzVirtualNetworkGateway -Name $_.Name -ResourceGroupName $_.ResourceGroupName -ErrorAction Stop }
+                    } catch {
+                        $Gateways = @()
+                    }
+                    foreach ($Gateway in $Gateways) {
+                        $GwVNetId = Resolve-AbrVNetIdFromSubnetId -SubnetId $Gateway.IpConfigurations[0].Subnet.Id
+                        if ($GwVNetId) { [void]$VNetsWithGateway.Add($GwVNetId.ToLower()) }
                     }
 
-                    if ($InfoLevel.Firewall -ge 1) {
-                        try {
-                            $Firewalls = Get-AzFirewall -ErrorAction Stop
-                        } catch {
-                            $Firewalls = @()
-                        }
-                        foreach ($Fw in $Firewalls) {
-                            $FwIpConfig = $Fw.IpConfigurations | Where-Object { $null -ne $_.PrivateIPAddress } | Select-Object -First 1
-                            $FwVNetId = Resolve-AbrVNetIdFromSubnetId -SubnetId $FwIpConfig.Subnet.Id
-                            if ($FwVNetId) { [void]$VNetsWithFirewall.Add($FwVNetId.ToLower()) }
-                        }
+                    try {
+                        $Firewalls = Get-AzFirewall -ErrorAction Stop
+                    } catch {
+                        $Firewalls = @()
+                    }
+                    foreach ($Fw in $Firewalls) {
+                        $FwIpConfig = $Fw.IpConfigurations | Where-Object { $null -ne $_.PrivateIPAddress } | Select-Object -First 1
+                        $FwVNetId = Resolve-AbrVNetIdFromSubnetId -SubnetId $FwIpConfig.Subnet.Id
+                        if ($FwVNetId) { [void]$VNetsWithFirewall.Add($FwVNetId.ToLower()) }
                     }
 
-                    if ($InfoLevel.NetworkVirtualAppliance -ge 1) {
-                        try {
-                            $SubVms = Get-AzVM -ErrorAction Stop
-                        } catch {
-                            $SubVms = @()
-                        }
-                        foreach ($SubVm in $SubVms) {
-                            $NvaCheck = Test-AbrAzNvaVm -VM $SubVm -NvaPublishers $NvaPublishers -NvaTagKey $NvaTagKey -NvaTagValue $NvaTagValue
-                            if (-not $NvaCheck.IsNva) { continue }
+                    try {
+                        $SubVms = Get-AzVM -ErrorAction Stop
+                    } catch {
+                        $SubVms = @()
+                    }
+                    foreach ($SubVm in $SubVms) {
+                        $NvaCheck = Test-AbrAzNvaVm -VM $SubVm -NvaPublishers $NvaPublishers -NvaTagKey $NvaTagKey -NvaTagValue $NvaTagValue
+                        if (-not $NvaCheck.IsNva) { continue }
 
-                            $PrimaryNicId = ($SubVm.NetworkProfile.NetworkInterfaces | Where-Object { $_.Primary } | Select-Object -First 1).Id
-                            if (-not $PrimaryNicId) { $PrimaryNicId = $SubVm.NetworkProfile.NetworkInterfaces[0].Id }
-                            $PrimaryNic = Get-AzNetworkInterface -Name $PrimaryNicId.Split('/')[-1] -ResourceGroupName $PrimaryNicId.Split('/')[4] -ErrorAction SilentlyContinue
-                            $NvaVNetId = Resolve-AbrVNetIdFromSubnetId -SubnetId $PrimaryNic.IpConfigurations[0].Subnet.Id
-                            if ($NvaVNetId) { [void]$VNetsWithNva.Add($NvaVNetId.ToLower()) }
-                        }
+                        $PrimaryNicId = ($SubVm.NetworkProfile.NetworkInterfaces | Where-Object { $_.Primary } | Select-Object -First 1).Id
+                        if (-not $PrimaryNicId) { $PrimaryNicId = $SubVm.NetworkProfile.NetworkInterfaces[0].Id }
+                        $PrimaryNic = Get-AzNetworkInterface -Name $PrimaryNicId.Split('/')[-1] -ResourceGroupName $PrimaryNicId.Split('/')[4] -ErrorAction SilentlyContinue
+                        $NvaVNetId = Resolve-AbrVNetIdFromSubnetId -SubnetId $PrimaryNic.IpConfigurations[0].Subnet.Id
+                        if ($NvaVNetId) { [void]$VNetsWithNva.Add($NvaVNetId.ToLower()) }
                     }
                 }
                 #endregion

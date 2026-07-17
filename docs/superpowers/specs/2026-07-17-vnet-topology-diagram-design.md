@@ -37,18 +37,18 @@ The existing per-subscription `Get-AbrAzVirtualNetwork` / `Get-AbrAzVirtualNetwo
 
 ## InfoLevel dependencies on other sections
 
-Because `Get-AbrAzNetworkTopology` runs once, outside the per-subscription loop, it cannot reuse data already fetched by other private functions (those run later, per-subscription, in a different Az context). Its pre-pass makes its own direct Azure API calls — which means it can easily end up making calls a user has deliberately disabled elsewhere. This must be avoided:
+Because `Get-AbrAzNetworkTopology` runs once, outside the per-subscription loop, it cannot reuse data already fetched by other private functions (those run later, per-subscription, in a different Az context). Its pre-pass makes its own direct Azure API calls.
+
+**Revision (superseding the original design below):** the Gateway/Firewall/NVA cross-references are **not** gated by `InfoLevel.VirtualNetworkGateway`/`InfoLevel.Firewall`/`InfoLevel.NetworkVirtualAppliance`. The original design gated each cross-reference by its source section's own `InfoLevel`, on the theory that disabled sections shouldn't trigger extra API calls. In practice this meant a VNet genuinely fronted by, say, an Azure Firewall would be silently misclassified as a **spoke** — not merely missing a badge — whenever `InfoLevel.Firewall` was `0` and the VNet also had fewer than 3 peerings. Misclassifying a real hub as a spoke is a correctness defect in an as-built document, not acceptable "graceful degradation" — unlike a missing badge on a VNet already correctly shown as a hub via another criterion, which was the only case the original design actually justified. All three cross-references (`Get-AzVirtualNetworkGateway`, `Get-AzFirewall`, `Get-AzVirtualMachine`+`Test-AbrAzNvaVm`) are therefore collected unconditionally, every time the section itself runs, regardless of the corresponding section's `InfoLevel`. Each still degrades gracefully on its own (empty result, no hub-detection contribution) if the Az API call itself fails — e.g. insufficient Reader-role scope for that resource type — via its existing try/catch.
+
+Overall section gate remains: `InfoLevel.NetworkTopology -ge 1 -and InfoLevel.VirtualNetwork -ge 2` (both required — an independent `NetworkTopology` toggle lets a user disable just the diagram while keeping per-subscription VNet tables, but the diagram cannot render with no underlying VNet/peering data, so it cannot be enabled independently of `VirtualNetwork`).
 
 | Data needed | Only collected if | Rationale |
 |---|---|---|
 | VNets + peerings (core diagram data) | `InfoLevel.VirtualNetwork -ge 2` | `Get-AbrAzVirtualNetwork.ps1:102-119` only calls `Get-AbrAzVirtualNetworkPeering` at level 2+ — peering detail is not considered "enabled" below that threshold today, and the diagram *is* peering detail. |
-| Gateway hub badge | `InfoLevel.VirtualNetworkGateway -ge 1` | Matches `Get-AbrAzVirtualNetworkGateway.ps1:28`'s own gate. |
-| Azure Firewall hub badge | `InfoLevel.Firewall -ge 1` | Matches `Get-AbrAzFirewall.ps1`'s own gate. |
-| NVA hub badge | `InfoLevel.NetworkVirtualAppliance -ge 1` | Matches `Get-AbrAzNetworkVirtualAppliance.ps1`'s own gate. |
-
-Overall section gate: `InfoLevel.NetworkTopology -ge 1 -and InfoLevel.VirtualNetwork -ge 2` (both required — an independent `NetworkTopology` toggle lets a user disable just the diagram while keeping per-subscription VNet tables, but the diagram cannot render with no underlying VNet/peering data, so it cannot be enabled independently of `VirtualNetwork`).
-
-Each of the three badge cross-references (`Get-AzVirtualNetworkGateway`, `Get-AzFirewall`, `Get-AzVirtualMachine`+`Test-AbrAzNvaVm`) is skipped entirely — no API call made — when its corresponding `InfoLevel` is below threshold. If a VNet would only have qualified as a hub via a skipped criterion (and doesn't meet the 3+ peering threshold or any other enabled criterion), it renders as a spoke instead, with no error or warning — this is expected degradation, not a failure. The diagram's `SectionInfo` paragraph should note that hub badges reflect only currently-enabled sections, so a reader isn't confused by a hub with no visible reason for being one.
+| Gateway hub detection | Always (independent of `InfoLevel.VirtualNetworkGateway`) | See revision above. |
+| Azure Firewall hub detection | Always (independent of `InfoLevel.Firewall`) | See revision above. |
+| NVA hub detection | Always (independent of `InfoLevel.NetworkVirtualAppliance`) | See revision above. |
 
 ## Data collection
 
@@ -58,9 +58,9 @@ For each subscription in `$AzSubscriptions` (respecting `Filter.Subscription`), 
 1. `Set-AzContext` to that subscription
 2. `Get-AzVirtualNetwork` — collect `Id`, `Name`, `ResourceGroupName`, `AddressSpace.AddressPrefixes`, subscription name
 3. `Get-AzVirtualNetworkPeering` (per VNet) — collect `RemoteVirtualNetwork.Id`, `PeeringState`
-4. **Only if `InfoLevel.VirtualNetworkGateway -ge 1`:** `Get-AzVirtualNetworkGateway` — collect `IpConfigurations[0].Subnet.Id`, parsed the same way `Get-AbrAzVirtualNetworkGateway.ps1` already does, to determine which VNet hosts a gateway
-5. **Only if `InfoLevel.Firewall -ge 1`:** `Get-AzFirewall` — collect `IpConfigurations[0].Subnet.Id` similarly, to determine which VNet hosts a firewall
-6. **Only if `InfoLevel.NetworkVirtualAppliance -ge 1`:** `Get-AzVirtualMachine` — for each VM, resolve its primary NIC's `Subnet.Id` (same parsing `Get-AbrAzNetworkVirtualAppliance.ps1:97-99` already does) and pass the VM through the new `Test-AbrAzNvaVm` helper to determine which VNet hosts an NVA
+4. `Get-AzVirtualNetworkGateway` (via `Get-AzResource` enumeration first, since `Get-AzVirtualNetworkGateway` requires `-ResourceGroupName` in every parameter set) — collect `IpConfigurations[0].Subnet.Id`, parsed the same way `Get-AbrAzVirtualNetworkGateway.ps1` already does, to determine which VNet hosts a gateway. Collected unconditionally — see "InfoLevel dependencies on other sections" above.
+5. `Get-AzFirewall` — collect `IpConfigurations[0].Subnet.Id` similarly, to determine which VNet hosts a firewall. Collected unconditionally.
+6. `Get-AzVirtualMachine` — for each VM, resolve its primary NIC's `Subnet.Id` (same parsing `Get-AbrAzNetworkVirtualAppliance.ps1:97-99` already does) and pass the VM through the new `Test-AbrAzNvaVm` helper to determine which VNet hosts an NVA. Collected unconditionally.
 
 See "InfoLevel dependencies on other sections" above for the full rationale. All data is collected into an in-memory list before any PScribo output, consistent with the module's coding standards.
 
@@ -138,7 +138,7 @@ New Pester tests, following the pattern used for the v0.3.0 section backfill (`7
 - Verify graceful no-op when no VNet anywhere has a peering
 - `Test-AbrAzNvaVm` gets its own dedicated unit tests (publisher match, tag-key-only match, tag-key+value match, no match)
 - Regression test confirming `Get-AbrAzNetworkVirtualAppliance.ps1`'s existing NVA-detection test coverage still passes unchanged after the refactor to call `Test-AbrAzNvaVm`
-- Verify `Get-AzVirtualNetworkGateway`/`Get-AzFirewall`/`Get-AzVirtualMachine` are **not called** when their respective `InfoLevel` is 0 (asserting `Should -Invoke ... -Times 0`), and that hub detection degrades to spoke (or another still-enabled criterion) in that case
+- Verify `Get-AzVirtualNetworkGateway`/`Get-AzFirewall`/`Get-AzVirtualMachine` are called regardless of `InfoLevel.VirtualNetworkGateway`/`InfoLevel.Firewall`/`InfoLevel.NetworkVirtualAppliance`, and that a VNet fronted by one of these is never misclassified as a spoke because the corresponding section is disabled elsewhere in the report
 - Verify the whole section is skipped when `InfoLevel.VirtualNetwork -lt 2`, even if `InfoLevel.NetworkTopology -ge 1`
 
 ## Out of scope / Future considerations
