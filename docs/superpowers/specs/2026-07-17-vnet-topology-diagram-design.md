@@ -31,21 +31,38 @@ Section -Style Heading1 $($AzTenant.Name) {
 }
 ```
 
+**Important:** `ManagementGroup` is called directly here — it is *not* a member of `Options.SectionOrder` and is not routed through the `ResourceTypeMap`/`SectionOrder` dispatch loop that governs per-subscription sections (that dispatch only exists inside the `foreach ($AzSubscription in $AzSubscriptions)` loop). `Get-AbrAzNetworkTopology` follows the same tenant-level, directly-called pattern as `Get-AbrAzManagementGroup` — it must **not** be added to `SectionOrder`, since that array has no effect at this point in the report flow.
+
 The existing per-subscription `Get-AbrAzVirtualNetwork` / `Get-AbrAzVirtualNetworkPeering` sections are unchanged — they keep rendering their tables inside each subscription's section. This diagram is additive, not a replacement.
+
+## InfoLevel dependencies on other sections
+
+Because `Get-AbrAzNetworkTopology` runs once, outside the per-subscription loop, it cannot reuse data already fetched by other private functions (those run later, per-subscription, in a different Az context). Its pre-pass makes its own direct Azure API calls — which means it can easily end up making calls a user has deliberately disabled elsewhere. This must be avoided:
+
+| Data needed | Only collected if | Rationale |
+|---|---|---|
+| VNets + peerings (core diagram data) | `InfoLevel.VirtualNetwork -ge 2` | `Get-AbrAzVirtualNetwork.ps1:102-119` only calls `Get-AbrAzVirtualNetworkPeering` at level 2+ — peering detail is not considered "enabled" below that threshold today, and the diagram *is* peering detail. |
+| Gateway hub badge | `InfoLevel.VirtualNetworkGateway -ge 1` | Matches `Get-AbrAzVirtualNetworkGateway.ps1:28`'s own gate. |
+| Azure Firewall hub badge | `InfoLevel.Firewall -ge 1` | Matches `Get-AbrAzFirewall.ps1`'s own gate. |
+| NVA hub badge | `InfoLevel.NetworkVirtualAppliance -ge 1` | Matches `Get-AbrAzNetworkVirtualAppliance.ps1`'s own gate. |
+
+Overall section gate: `InfoLevel.NetworkTopology -ge 1 -and InfoLevel.VirtualNetwork -ge 2` (both required — an independent `NetworkTopology` toggle lets a user disable just the diagram while keeping per-subscription VNet tables, but the diagram cannot render with no underlying VNet/peering data, so it cannot be enabled independently of `VirtualNetwork`).
+
+Each of the three badge cross-references (`Get-AzVirtualNetworkGateway`, `Get-AzFirewall`, `Get-AzVirtualMachine`+`Test-AbrAzNvaVm`) is skipped entirely — no API call made — when its corresponding `InfoLevel` is below threshold. If a VNet would only have qualified as a hub via a skipped criterion (and doesn't meet the 3+ peering threshold or any other enabled criterion), it renders as a spoke instead, with no error or warning — this is expected degradation, not a failure. The diagram's `SectionInfo` paragraph should note that hub badges reflect only currently-enabled sections, so a reader isn't confused by a hub with no visible reason for being one.
 
 ## Data collection
 
 `Get-AbrAzNetworkTopology.ps1` performs a cross-subscription pre-pass, following the same pattern already used by `Get-AbrAzNetworkVirtualAppliance.ps1` for its UDR/load-balancer cross-referencing:
 
-For each subscription in `$AzSubscriptions` (respecting `Filter.Subscription`):
+For each subscription in `$AzSubscriptions` (respecting `Filter.Subscription`), only entered at all if the overall section gate (`InfoLevel.NetworkTopology -ge 1 -and InfoLevel.VirtualNetwork -ge 2`) passes:
 1. `Set-AzContext` to that subscription
 2. `Get-AzVirtualNetwork` — collect `Id`, `Name`, `ResourceGroupName`, `AddressSpace.AddressPrefixes`, subscription name
 3. `Get-AzVirtualNetworkPeering` (per VNet) — collect `RemoteVirtualNetwork.Id`, `PeeringState`
-4. `Get-AzVirtualNetworkGateway` — collect `IpConfigurations[0].Subnet.Id`, parsed the same way `Get-AbrAzVirtualNetworkGateway.ps1` already does, to determine which VNet hosts a gateway
-5. `Get-AzFirewall` — collect `IpConfigurations[0].Subnet.Id` similarly, to determine which VNet hosts a firewall
-6. `Get-AzVirtualMachine` — for each VM, resolve its primary NIC's `Subnet.Id` (same parsing `Get-AbrAzNetworkVirtualAppliance.ps1:97-99` already does) and pass the VM through the new `Test-AbrAzNvaVm` helper to determine which VNet hosts an NVA
+4. **Only if `InfoLevel.VirtualNetworkGateway -ge 1`:** `Get-AzVirtualNetworkGateway` — collect `IpConfigurations[0].Subnet.Id`, parsed the same way `Get-AbrAzVirtualNetworkGateway.ps1` already does, to determine which VNet hosts a gateway
+5. **Only if `InfoLevel.Firewall -ge 1`:** `Get-AzFirewall` — collect `IpConfigurations[0].Subnet.Id` similarly, to determine which VNet hosts a firewall
+6. **Only if `InfoLevel.NetworkVirtualAppliance -ge 1`:** `Get-AzVirtualMachine` — for each VM, resolve its primary NIC's `Subnet.Id` (same parsing `Get-AbrAzNetworkVirtualAppliance.ps1:97-99` already does) and pass the VM through the new `Test-AbrAzNvaVm` helper to determine which VNet hosts an NVA
 
-All data is collected into an in-memory list before any PScribo output, consistent with the module's coding standards.
+See "InfoLevel dependencies on other sections" above for the full rationale. All data is collected into an in-memory list before any PScribo output, consistent with the module's coding standards.
 
 ## Refactor: shared NVA detection
 
@@ -97,8 +114,8 @@ Sourced by the user from the official Azure Architecture Icons set (same approac
 
 ## Integration
 
-- New `InfoLevel.NetworkTopology` key added to `AsBuiltReport.Microsoft.Azure.json`, `README.md`, and all 5 language files. Default value matches the existing `VirtualNetwork` InfoLevel default.
-- New `SectionOrder` entry `"NetworkTopology"`, placed immediately after `"ManagementGroup"`.
+- New `InfoLevel.NetworkTopology` key added to `AsBuiltReport.Microsoft.Azure.json`, `README.md`, and all 5 language files. Default value matches the existing `VirtualNetwork` InfoLevel default. Effective only in combination with `InfoLevel.VirtualNetwork -ge 2` (see "InfoLevel dependencies on other sections" above) — this combination should be documented explicitly in `README.md`, not left implicit.
+- **Not** added to `Options.SectionOrder` — called directly alongside `Get-AbrAzManagementGroup`, matching that function's placement outside the `SectionOrder`/`ResourceTypeMap` dispatch (see "Report flow placement" above).
 - Gated by the existing `Options.EnableDiagrams` switch — no new Options key introduced.
 - Reuses existing `Options.DiagramTheme` and `Options.DiagramDpi`.
 - Wrapped in try/catch with `Write-PScriboMessage -IsWarning`, matching every other diagram/report call — a diagram failure never breaks the report.
@@ -121,6 +138,8 @@ New Pester tests, following the pattern used for the v0.3.0 section backfill (`7
 - Verify graceful no-op when no VNet anywhere has a peering
 - `Test-AbrAzNvaVm` gets its own dedicated unit tests (publisher match, tag-key-only match, tag-key+value match, no match)
 - Regression test confirming `Get-AbrAzNetworkVirtualAppliance.ps1`'s existing NVA-detection test coverage still passes unchanged after the refactor to call `Test-AbrAzNvaVm`
+- Verify `Get-AzVirtualNetworkGateway`/`Get-AzFirewall`/`Get-AzVirtualMachine` are **not called** when their respective `InfoLevel` is 0 (asserting `Should -Invoke ... -Times 0`), and that hub detection degrades to spoke (or another still-enabled criterion) in that case
+- Verify the whole section is skipped when `InfoLevel.VirtualNetwork -lt 2`, even if `InfoLevel.NetworkTopology -ge 1`
 
 ## Out of scope / Future considerations
 
