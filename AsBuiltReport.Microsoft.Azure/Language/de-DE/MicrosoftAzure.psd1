@@ -1478,7 +1478,7 @@ GetAbrAzManagementGroup = ConvertFrom-StringData @'
 GetAbrAzNetworkTopology = ConvertFrom-StringData @'
     InfoLevel             = NetworkTopology InfoLevel auf {0} gesetzt.
     Collecting            = Sammlung von Informationen zur Hub-Spoke-Topologie des virtuellen Azure-Netzwerks.
-    SectionInfo           = Dieses Diagramm zeigt die Peering-Topologie virtueller Netzwerke über alle Abonnements im Mandanten hinweg. Ein virtuelles Netzwerk wird als Hub betrachtet, wenn es 3 oder mehr Peering-Verbindungen hat oder ein Virtual Network Gateway, eine Azure Firewall oder eine Network Virtual Appliance hostet. Die Hub-Erkennung erfolgt unabhängig von den InfoLevel-Einstellungen der Abschnitte Gateway, Firewall und Network Virtual Appliance, sodass ein Hub niemals fälschlicherweise als Spoke eingestuft wird, nur weil einer dieser Abschnitte an anderer Stelle im Bericht deaktiviert ist. Virtuelle Netzwerke ohne Peering-Verbindungen werden nicht angezeigt; sie werden weiterhin vollständig im Abschnitt "Virtuelles Netzwerk" des jeweiligen Abonnements dokumentiert.
+    SectionInfo           = Eine Hub-Spoke-Topologie zentralisiert Konnektivität und Sicherheit, indem mehrere Spoke-Netzwerke mit einem zentralen Hub gepeert werden, der in der Regel gemeinsam genutzte Dienste wie ein Gateway, eine Firewall oder eine Network Virtual Appliance hostet. Dieser Abschnitt dokumentiert die Peering-Beziehungen virtueller Netzwerke über alle Abonnements im Mandanten hinweg.
     Heading               = Netzwerktopologie
     TableHeading          = Topologie des virtuellen Netzwerks
     DiagramHeading        = Hub-Spoke-Topologie des virtuellen Netzwerks
@@ -1498,6 +1498,8 @@ GetAbrAzNetworkTopology = ConvertFrom-StringData @'
     Gateway               = Gateway
     Firewall              = Firewall
     Nva                   = NVA
+    Connected             = Verbunden
+    Disconnected          = Getrennt
     ErrorMessage          = Netzwerktopologie-Informationen koennen nicht gesammelt werden:
 '@
 

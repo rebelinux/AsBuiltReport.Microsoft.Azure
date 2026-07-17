@@ -81,9 +81,9 @@ function Get-AbrDiagAzNetworkTopology {
                     if (-not $DrawnPairs.Add($PairKey)) { continue }
 
                     if ($PeeringEdge.Connected) {
-                        Edge $SourceSafeId $TargetSafeId @{ color = $EdgeColor; style = 'solid' }
+                        Edge $SourceSafeId $TargetSafeId @{ color = $EdgeColor; style = 'solid'; dir = 'both'; label = $LocalizedData.Connected }
                     } else {
-                        Edge $SourceSafeId $TargetSafeId @{ color = $DisconnectedColor; style = 'dashed' }
+                        Edge $SourceSafeId $TargetSafeId @{ color = $DisconnectedColor; style = 'dashed'; dir = 'both'; label = $LocalizedData.Disconnected }
                     }
                 }
             }
@@ -94,9 +94,8 @@ function Get-AbrDiagAzNetworkTopology {
                 -MainDiagramLabel $LocalizedData.DiagramHeading `
                 -IconPath $IconPath `
                 -ImagesObj $ImagesObj `
-                -MainGraphSize '9,6.5' `
+                -MainGraphSize '6.5,9' `
                 -Dpi $DiagramDpi `
-                -Direction 'left-to-right' `
                 -DisableMainDiagramLogo
             if ($DiagramResult) {
                 Image -Base64 $DiagramResult -Text $LocalizedData.DiagramAltText -Percent $DiagramPercent

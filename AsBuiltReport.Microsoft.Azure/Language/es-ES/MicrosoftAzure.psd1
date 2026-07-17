@@ -1478,7 +1478,7 @@ GetAbrAzManagementGroup = ConvertFrom-StringData @'
 GetAbrAzNetworkTopology = ConvertFrom-StringData @'
     InfoLevel             = InfoLevel de topologia de red establecido en {0}.
     Collecting            = Recopilando informacion de topologia hub-spoke de red virtual de Azure.
-    SectionInfo           = Este diagrama muestra la topologia de emparejamiento de redes virtuales en todas las suscripciones del inquilino. Una red virtual se considera un concentrador (hub) si tiene 3 o mas conexiones de emparejamiento, o si aloja una puerta de enlace de red virtual, un Azure Firewall o un dispositivo virtual de red. La deteccion de concentradores se recopila de forma independiente a la configuracion de InfoLevel de las secciones de puerta de enlace, firewall y dispositivo virtual de red, por lo que un concentrador nunca se clasifica erroneamente como radial porque una de esas secciones este deshabilitada en otra parte del informe. Las redes virtuales sin conexiones de emparejamiento no se muestran; permanecen totalmente documentadas en la seccion de red virtual de cada suscripcion.
+    SectionInfo           = Una topologia hub-spoke centraliza la conectividad y la seguridad mediante el emparejamiento de multiples redes virtuales radiales con un concentrador central, que normalmente aloja servicios compartidos como una puerta de enlace, un firewall o un dispositivo virtual de red. Esta seccion documenta las relaciones de emparejamiento de redes virtuales en todas las suscripciones del inquilino.
     Heading               = Topologia de red
     TableHeading          = Topologia de red virtual
     DiagramHeading        = Topologia hub-spoke de red virtual
@@ -1498,6 +1498,8 @@ GetAbrAzNetworkTopology = ConvertFrom-StringData @'
     Gateway               = Puerta de enlace
     Firewall              = Firewall
     Nva                   = NVA
+    Connected             = Conectado
+    Disconnected          = Desconectado
     ErrorMessage          = No se puede recopilar informacion de topologia de red:
 '@
 

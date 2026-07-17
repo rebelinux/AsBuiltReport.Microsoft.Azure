@@ -1478,7 +1478,7 @@ GetAbrAzManagementGroup = ConvertFrom-StringData @'
 GetAbrAzNetworkTopology = ConvertFrom-StringData @'
     InfoLevel             = NetworkTopology InfoLevel set at {0}.
     Collecting            = Collecting Azure Virtual Network hub-spoke topology information.
-    SectionInfo           = This diagram shows Virtual Network peering topology across all subscriptions in the tenant. A Virtual Network is treated as a hub if it has 3 or more peering connections, or hosts a Virtual Network Gateway, Azure Firewall, or Network Virtual Appliance; hub detection is collected independently of the Gateway, Firewall, and Network Virtual Appliance sections' own InfoLevel settings, so a hub is never misclassified as a spoke because one of those sections is disabled elsewhere in the report. Virtual Networks with no peering connections are not shown; they remain fully documented in each subscription's Virtual Network section.
+    SectionInfo           = A hub-and-spoke topology centralises connectivity and security by peering multiple spoke Virtual Networks to a central hub, which typically hosts shared services such as a gateway, firewall, or network virtual appliance. This section documents Virtual Network peering relationships across all subscriptions in the tenant.
     Heading               = Network Topology
     TableHeading          = Virtual Network Topology
     DiagramHeading        = Virtual Network Hub-Spoke Topology
@@ -1498,6 +1498,8 @@ GetAbrAzNetworkTopology = ConvertFrom-StringData @'
     Gateway               = Gateway
     Firewall              = Firewall
     Nva                   = NVA
+    Connected             = Connected
+    Disconnected          = Disconnected
     ErrorMessage          = Unable to collect Network Topology information:
 '@
 

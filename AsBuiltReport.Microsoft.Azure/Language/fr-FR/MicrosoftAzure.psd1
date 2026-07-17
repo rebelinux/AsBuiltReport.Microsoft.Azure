@@ -1478,7 +1478,7 @@ GetAbrAzManagementGroup = ConvertFrom-StringData @'
 GetAbrAzNetworkTopology = ConvertFrom-StringData @'
     InfoLevel             = InfoLevel de la topologie reseau defini a {0}.
     Collecting            = Collecte des informations de topologie hub-spoke du reseau virtuel Azure.
-    SectionInfo           = Ce diagramme montre la topologie d'appairage des reseaux virtuels dans tous les abonnements du locataire. Un reseau virtuel est considere comme un hub s'il possede 3 appairages ou plus, ou s'il heberge une passerelle de reseau virtuel, un Azure Firewall ou une appliance virtuelle reseau. La detection des hubs est collectee independamment des parametres InfoLevel des sections Passerelle, Pare-feu et Appliance virtuelle reseau, de sorte qu'un hub n'est jamais classe a tort comme spoke parce que l'une de ces sections est desactivee ailleurs dans le rapport. Les reseaux virtuels sans appairage ne sont pas affiches ; ils restent entierement documentes dans la section reseau virtuel de chaque abonnement.
+    SectionInfo           = Une topologie hub-spoke centralise la connectivite et la securite en appairant plusieurs reseaux virtuels spoke a un hub central, qui heberge generalement des services partages tels qu'une passerelle, un pare-feu ou une appliance virtuelle reseau. Cette section documente les relations d'appairage des reseaux virtuels dans tous les abonnements du locataire.
     Heading               = Topologie reseau
     TableHeading          = Topologie du reseau virtuel
     DiagramHeading        = Topologie hub-spoke du reseau virtuel
@@ -1498,6 +1498,8 @@ GetAbrAzNetworkTopology = ConvertFrom-StringData @'
     Gateway               = Passerelle
     Firewall              = Pare-feu
     Nva                   = NVA
+    Connected             = Connecte
+    Disconnected          = Deconnecte
     ErrorMessage          = Impossible de collecter les informations de topologie reseau :
 '@
 
