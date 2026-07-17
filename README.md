@@ -369,7 +369,7 @@ The table below outlines the default and maximum **InfoLevel** settings for each
 | VirtualNetworkGateway       |        1        |        2        |
 | VmScaleSet                  |        1        |        2        |
 
-> **Note:** `NetworkTopology` also requires `VirtualNetwork` to be set to `2` or higher — the topology diagram is built from Virtual Network peering detail, which is only collected at that level. Its Gateway/Firewall/NVA hub-detection is collected independently of the `VirtualNetworkGateway`, `Firewall`, and `NetworkVirtualAppliance` `InfoLevel` settings, so a hub is never misclassified as a spoke just because one of those sections is disabled elsewhere in the report.
+> **Note:** `NetworkTopology` collects its own Virtual Network, peering, Gateway, Firewall, and Network Virtual Appliance data independently of the `VirtualNetwork`, `VirtualNetworkGateway`, `Firewall`, and `NetworkVirtualAppliance` `InfoLevel` settings — only `NetworkTopology` itself controls whether the diagram is collected and rendered, so a hub is never misclassified as a spoke, or the diagram omitted entirely, just because another section is disabled or set to a lower level elsewhere in the report.
 
 ### Healthcheck
 The **Healthcheck** schema is used to toggle health checks on or off.

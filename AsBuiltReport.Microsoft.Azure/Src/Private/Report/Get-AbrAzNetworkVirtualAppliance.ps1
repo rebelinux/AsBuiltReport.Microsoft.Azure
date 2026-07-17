@@ -29,31 +29,6 @@ function Get-AbrAzNetworkVirtualAppliance {
         Try {
             if ($InfoLevel.NetworkVirtualAppliance -gt 0) {
 
-                #region --- NVA publisher list ---
-                # Default well-known NVA publishers. Overridden by Options.NvaPublishers when set.
-                $DefaultNvaPublishers = @(
-                    'paloaltonetworks',
-                    'fortinet',
-                    'cisco',
-                    'checkpoint',
-                    'f5-networks',
-                    'barracudanetworks',
-                    'sonicwall-inc',
-                    'juniper-networks',
-                    'viptela',
-                    'riverbed'
-                )
-
-                $NvaPublishers = if ($Options.NvaPublishers -and $Options.NvaPublishers.Count -gt 0) {
-                    $Options.NvaPublishers
-                } else {
-                    $DefaultNvaPublishers
-                }
-
-                $NvaTagKey   = if ($Options.NvaTag) { ($Options.NvaTag -split '=')[0].Trim() } else { $null }
-                $NvaTagValue = if ($Options.NvaTag -and $Options.NvaTag -contains '=') { ($Options.NvaTag -split '=',2)[1].Trim() } else { $null }
-                #endregion
-
                 Write-PScriboMessage $LocalizedData.Collecting
 
                 #region --- Pre-collect route tables and load balancers for UDR cross-reference (InfoLevel 3) ---
@@ -73,7 +48,7 @@ function Get-AbrAzNetworkVirtualAppliance {
 
                 foreach ($AzVm in $AzVms) {
                     $ImageRef = $AzVm.StorageProfile.ImageReference
-                    $NvaCheck = Test-AbrAzNvaVm -VM $AzVm -NvaPublishers $NvaPublishers -NvaTagKey $NvaTagKey -NvaTagValue $NvaTagValue
+                    $NvaCheck = Test-AbrAzNvaVm -VM $AzVm -NvaPublishers $Options.NvaPublishers -NvaTag $Options.NvaTag
                     $IsNvaByImg = $NvaCheck.IsNvaByImg
                     $IsNvaByTag = $NvaCheck.IsNvaByTag
 

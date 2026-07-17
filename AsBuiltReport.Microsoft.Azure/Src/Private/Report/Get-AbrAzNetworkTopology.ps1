@@ -26,23 +26,9 @@ function Get-AbrAzNetworkTopology {
     }
 
     process {
-        if (($InfoLevel.NetworkTopology -ge 1) -and ($InfoLevel.VirtualNetwork -ge 2)) {
+        if ($InfoLevel.NetworkTopology -ge 1) {
             try {
                 Write-PScriboMessage $LocalizedData.Collecting
-
-                #region --- NVA publisher list (mirrors Get-AbrAzNetworkVirtualAppliance.ps1) ---
-                $DefaultNvaPublishers = @(
-                    'paloaltonetworks', 'fortinet', 'cisco', 'checkpoint', 'f5-networks',
-                    'barracudanetworks', 'sonicwall-inc', 'juniper-networks', 'viptela', 'riverbed'
-                )
-                $NvaPublishers = if ($Options.NvaPublishers -and $Options.NvaPublishers.Count -gt 0) {
-                    $Options.NvaPublishers
-                } else {
-                    $DefaultNvaPublishers
-                }
-                $NvaTagKey = if ($Options.NvaTag) { ($Options.NvaTag -split '=')[0].Trim() } else { $null }
-                $NvaTagValue = if ($Options.NvaTag -and $Options.NvaTag -contains '=') { ($Options.NvaTag -split '=', 2)[1].Trim() } else { $null }
-                #endregion
 
                 #region --- Cross-subscription pre-pass ---
                 $AllVNets = [System.Collections.Generic.List[object]]::new()
@@ -125,7 +111,7 @@ function Get-AbrAzNetworkTopology {
                         $SubVms = @()
                     }
                     foreach ($SubVm in $SubVms) {
-                        $NvaCheck = Test-AbrAzNvaVm -VM $SubVm -NvaPublishers $NvaPublishers -NvaTagKey $NvaTagKey -NvaTagValue $NvaTagValue
+                        $NvaCheck = Test-AbrAzNvaVm -VM $SubVm -NvaPublishers $Options.NvaPublishers -NvaTag $Options.NvaTag
                         if (-not $NvaCheck.IsNva) { continue }
 
                         $PrimaryNicId = ($SubVm.NetworkProfile.NetworkInterfaces | Where-Object { $_.Primary } | Select-Object -First 1).Id
