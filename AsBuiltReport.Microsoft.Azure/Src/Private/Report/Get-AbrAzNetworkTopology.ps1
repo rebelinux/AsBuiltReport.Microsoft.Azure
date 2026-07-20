@@ -178,7 +178,7 @@ function Get-AbrAzNetworkTopology {
                             BlankLine
                         }
 
-                        if ($Options.EnableDiagrams) {
+                        if ($Diagram.NetworkTopology.Enabled) {
                             try {
                                 Get-AbrDiagAzNetworkTopology -VNets $TopologyVNets -PeeringEdges $IncludedEdges
                             } catch {

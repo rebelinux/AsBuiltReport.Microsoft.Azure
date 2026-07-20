@@ -57,6 +57,7 @@ function Invoke-AsBuiltReport.Microsoft.Azure {
     $Filter = $ReportConfig.Filter
     $InfoLevel = $ReportConfig.InfoLevel
     $Options = $ReportConfig.Options
+    $Diagram = $ReportConfig.Diagram
     $SectionOrder = $Options.SectionOrder
     $LocalizedData = $reportTranslate.InvokeAsBuiltReportMicrosoftAzure
 

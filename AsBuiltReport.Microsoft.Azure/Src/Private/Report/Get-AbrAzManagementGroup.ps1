@@ -32,7 +32,7 @@ function Get-AbrAzManagementGroup {
                             Paragraph $LocalizedData.SectionInfo
                             BlankLine
                         }
-                        if ($Options.EnableDiagrams) {
+                        if ($Diagram.ManagementGroup.Enabled) {
                             try {
                                 Get-AbrDiagAzManagementGroup -RootManagementGroup $AzRootMG
                             } catch {
