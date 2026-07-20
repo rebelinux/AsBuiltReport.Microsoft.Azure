@@ -13,8 +13,8 @@ function Get-AbrDiagAzNetworkTopology {
     }
     process {
         try {
-            $DiagramTheme = if ($Options.DiagramTheme) { $Options.DiagramTheme } else { 'White' }
-            $DiagramDpi = if ($Options.DiagramDpi) { $Options.DiagramDpi } else { 96 }
+            $DiagramTheme = if ($Diagram.NetworkTopology.Theme) { $Diagram.NetworkTopology.Theme } else { 'White' }
+            $DiagramDpi = if ($Diagram.NetworkTopology.Dpi) { $Diagram.NetworkTopology.Dpi } else { 96 }
             # PScribo's Image -Percent scales off raw pixel count assuming a fixed 96 DPI baseline,
             # so a higher render DPI must be offset by a proportionally lower Percent to keep the
             # printed size on the page the same while still gaining pixel density.
