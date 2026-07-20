@@ -584,6 +584,31 @@ Describe 'AsBuiltReport.Microsoft.Azure Module Tests' {
             $JsonConfig.HealthCheck | Should -Not -BeNullOrEmpty
         }
 
+        It 'Should have a Diagram section' {
+            $JsonConfig.Diagram | Should -Not -BeNullOrEmpty
+        }
+
+        It 'Diagram should include ManagementGroup' {
+            $JsonConfig.Diagram.PSObject.Properties.Name | Should -Contain 'ManagementGroup'
+        }
+
+        It 'Diagram should include NetworkTopology' {
+            $JsonConfig.Diagram.PSObject.Properties.Name | Should -Contain 'NetworkTopology'
+        }
+
+        It 'Diagram.ManagementGroup should have Enabled, Theme, and Dpi' {
+            $JsonConfig.Diagram.ManagementGroup.PSObject.Properties.Name | Should -Contain 'Enabled'
+            $JsonConfig.Diagram.ManagementGroup.PSObject.Properties.Name | Should -Contain 'Theme'
+            $JsonConfig.Diagram.ManagementGroup.PSObject.Properties.Name | Should -Contain 'Dpi'
+        }
+
+        It 'Diagram.NetworkTopology should have Enabled, Theme, Dpi, and Columns' {
+            $JsonConfig.Diagram.NetworkTopology.PSObject.Properties.Name | Should -Contain 'Enabled'
+            $JsonConfig.Diagram.NetworkTopology.PSObject.Properties.Name | Should -Contain 'Theme'
+            $JsonConfig.Diagram.NetworkTopology.PSObject.Properties.Name | Should -Contain 'Dpi'
+            $JsonConfig.Diagram.NetworkTopology.PSObject.Properties.Name | Should -Contain 'Columns'
+        }
+
         It 'InfoLevel should include StorageAccount' {
             $JsonConfig.InfoLevel.PSObject.Properties.Name | Should -Contain 'StorageAccount'
         }
@@ -968,8 +993,25 @@ Describe 'AsBuiltReport.Microsoft.Azure Module Tests' {
             $JsonConfig.Options.ShowTags | Should -BeOfType [bool]
         }
 
-        It 'Options.EnableDiagrams should be boolean' {
-            $JsonConfig.Options.EnableDiagrams | Should -BeOfType [bool]
+        It 'Options should no longer have diagram settings' {
+            $JsonConfig.Options.PSObject.Properties.Name | Should -Not -Contain 'EnableDiagrams'
+            $JsonConfig.Options.PSObject.Properties.Name | Should -Not -Contain 'DiagramTheme'
+            $JsonConfig.Options.PSObject.Properties.Name | Should -Not -Contain 'DiagramDpi'
+            $JsonConfig.Options.PSObject.Properties.Name | Should -Not -Contain 'DiagramColumnSize'
+        }
+
+        It 'Diagram.<Name>.Enabled should be boolean' {
+            foreach ($DiagramName in $JsonConfig.Diagram.PSObject.Properties.Name) {
+                $JsonConfig.Diagram.$DiagramName.Enabled | Should -BeOfType [bool] -Because "Diagram.$DiagramName.Enabled should be boolean"
+            }
+        }
+
+        It 'Diagram.<Name>.Dpi should be a positive integer' {
+            foreach ($DiagramName in $JsonConfig.Diagram.PSObject.Properties.Name) {
+                $Dpi = $JsonConfig.Diagram.$DiagramName.Dpi
+                ($Dpi -is [int] -or $Dpi -is [int64]) | Should -Be $true -Because "Diagram.$DiagramName.Dpi should be an integer"
+                $Dpi | Should -BeGreaterThan 0 -Because "Diagram.$DiagramName.Dpi should be positive"
+            }
         }
 
         It 'Policy InfoLevel structure should have Assignments and Definitions' {

@@ -12,9 +12,6 @@
     "Options": {
         "ShowSectionInfo": true,
         "ShowTags": true,
-        "EnableDiagrams": true,
-        "DiagramTheme": "White",
-        "DiagramDpi": 600,
         "NvaPublishers": ["fortinet"],
         "NvaTag": "",
         "SectionOrder": [
@@ -108,6 +105,19 @@
         "VirtualNetwork": 1,
         "VirtualNetworkGateway": 1,
         "VmScaleSet": 1
+    },
+    "Diagram": {
+        "ManagementGroup": {
+            "Enabled": true,
+            "Theme": "White",
+            "Dpi": 600
+        },
+        "NetworkTopology": {
+            "Enabled": true,
+            "Theme": "White",
+            "Dpi": 600,
+            "Columns": 4
+        }
     },
     "HealthCheck": {
         "ApplicationGateway": {
