@@ -7,6 +7,7 @@
 
 ### Changed
 * Extract NVA detection logic shared by `Get-AbrAzNetworkVirtualAppliance` and `Get-AbrAzNetworkTopology` into `Test-AbrAzNvaVm`
+* **Breaking:** Replace global `Options.EnableDiagrams`/`DiagramTheme`/`DiagramDpi`/`DiagramColumnSize` with a per-diagram `Diagram` JSON section (`Diagram.ManagementGroup.*`, `Diagram.NetworkTopology.*`), allowing each diagram to be independently enabled, themed, and sized
 
 ### Fixed
 * Fix `Get-AbrAzLbFrontendIpConfig` - Resolve `PublicIPAddress` to the associated public IP resource name
