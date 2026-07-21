@@ -3,14 +3,18 @@
 ## [0.3.1] - 2026-07-??
 
 ### Added
-* Add support for Virtual Network hub-spoke topology information and diagrams
+* Add support for Virtual Network hub-spoke topology diagram
+* Add a colour-coded legend to the Network Topology diagram explaining the Connected/Initiated/Disconnected peering-state edge colours
+* Add region and subscription grouping to the Network Topology diagram - hubs and spokes are each clustered by Azure region, and by subscription within each region, instead of one flat grid; peering edges attach to the bottom-center of the hub's subscription box and the top-center of the spoke's subscription box; `Diagram.NetworkTopology.Columns` now also caps how many subscription boxes appear per row within a region
 
 ### Changed
 * Extract NVA detection logic shared by `Get-AbrAzNetworkVirtualAppliance` and `Get-AbrAzNetworkTopology` into `Test-AbrAzNvaVm`
-* **Breaking:** Replace global `Options.EnableDiagrams`/`DiagramTheme`/`DiagramDpi`/`DiagramColumnSize` with a per-diagram `Diagram` JSON section (`Diagram.ManagementGroup.*`, `Diagram.NetworkTopology.*`), allowing each diagram to be independently enabled, themed, and sized
+* Bump `AsBuiltReport.Diagram` dependency to v1.0.9
+* Replace global Diagram option settings with a per-diagram `Diagram` JSON section, allowing each diagram to be independently enabled and configured
 
 ### Fixed
 * Fix `Get-AbrAzLbFrontendIpConfig` - Resolve `PublicIPAddress` to the associated public IP resource name
+* Fix `Get-AbrDiagAzManagementGroup` and `Get-AbrDiagAzNetworkTopology` - Replace `-DisableMainDiagramLogo` with `-LogoName 'NoIcon'` when calling `New-AbrDiagram`; the former blanked the entire diagram label (title text included, not just the logo image), so neither diagram showed a title
 
 ### Removed
 * Remove X/Tweet post action in `Release.yml` pipeline

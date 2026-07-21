@@ -12,7 +12,7 @@
     "Options": {
         "ShowSectionInfo": true,
         "ShowTags": true,
-        "NvaPublishers": ["fortinet"],
+        "NvaPublishers": [],
         "NvaTag": "",
         "SectionOrder": [
             "ApplicationGateway",

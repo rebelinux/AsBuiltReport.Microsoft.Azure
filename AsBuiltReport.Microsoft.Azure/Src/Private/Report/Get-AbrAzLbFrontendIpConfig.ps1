@@ -49,8 +49,8 @@ function Get-AbrAzLbFrontendIpConfig {
                                 } else {
                                     $LocalizedData.Unknown
                                 })
-                                $LocalizedData.PublicIPAddress = $(if ($AzLbFrontendIpConfig.PublicIpAddress) {
-                                    $AzLbFrontendIpConfig.PublicIpAddress
+                                $LocalizedData.PublicIPAddress = $(if ($AzLbFrontendIpConfig.PublicIpAddress.Id) {
+                                    ($AzLbFrontendIpConfig.PublicIpAddress.Id).split('/')[-1]
                                 } else {
                                     $LocalizedData.None
                                 })

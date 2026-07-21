@@ -380,7 +380,7 @@ The **Diagram** schema allows each generated diagram to be independently enabled
 | NetworkTopology.Enabled  | true / false  | false   | Toggle to enable/disable the Network Topology diagram.                                                                                                    |
 | NetworkTopology.Theme    | White / Black | White   | Sets the colour theme for the Network Topology diagram.                                                                                                   |
 | NetworkTopology.Dpi      | 72 - 600      | 96      | Sets the raster output resolution (dots per inch) for the Network Topology diagram. Requires [AsBuiltReport.Diagram](https://github.com/AsBuiltReport/AsBuiltReport.Diagram) 1.0.8 or later. |
-| NetworkTopology.Columns  | Integer, 1 or higher | 3 | Sets the number of columns used to wrap the spoke grid, keeping the diagram compact when a hub has many spokes.                                          |
+| NetworkTopology.Columns  | Integer, 1 or higher | 3 | Sets the number of columns used to wrap a subscription's spoke grid, and the number of subscription boxes shown per row within a region, keeping the diagram compact when a hub has many spokes or spans many subscriptions.                                          |
 
 ### Healthcheck
 The **Healthcheck** schema is used to toggle health checks on or off.

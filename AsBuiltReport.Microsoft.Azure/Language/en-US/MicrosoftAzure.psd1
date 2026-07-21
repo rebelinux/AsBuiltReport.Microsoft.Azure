@@ -1490,6 +1490,7 @@ GetAbrAzNetworkTopology = ConvertFrom-StringData @'
     ResourceGroup         = Resource Group
     Subscription          = Subscription
     Location              = Location
+    UnknownRegion         = Unknown Region
     AddressSpace          = Address Space
     Role                  = Role
     Hub                   = Hub
@@ -1499,6 +1500,7 @@ GetAbrAzNetworkTopology = ConvertFrom-StringData @'
     Firewall              = Firewall
     Nva                   = NVA
     Connected             = Connected
+    Initiated             = Initiated
     Disconnected          = Disconnected
     ErrorMessage          = Unable to collect Network Topology information:
 '@

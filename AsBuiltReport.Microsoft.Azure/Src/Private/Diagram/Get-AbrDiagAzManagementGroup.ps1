@@ -11,17 +11,16 @@ function Get-AbrDiagAzManagementGroup {
         try {
             $DiagramTheme = if ($Diagram.ManagementGroup.Theme) { $Diagram.ManagementGroup.Theme } else { 'White' }
             $DiagramDpi = if ($Diagram.ManagementGroup.Dpi) { $Diagram.ManagementGroup.Dpi } else { 96 }
-            # PScribo's Image -Percent scales off raw pixel count assuming a fixed 96 DPI baseline,
-            # so a higher render DPI must be offset by a proportionally lower Percent to keep the
-            # printed size on the page the same while still gaining pixel density.
+            # PScribo's Image -Percent scales off raw pixel count assuming a fixed 96 DPI baseline, so a higher render DPI must be offset by a proportionally lower Percent to keep the printed size on the page the same while still gaining pixel density.
             $DiagramPercent = [Math]::Max(1, [Math]::Round(9600 / $DiagramDpi))
             $FontColor = if ($DiagramTheme -eq 'Black') { '#FFFFFF' } else { '#000000' }
-            $EdgeColor = if ($DiagramTheme -eq 'Black') { '#AAAAAA' } else { '#333333' }
+            $EdgeColor = '#0078D4'
             $CellBgColor = if ($DiagramTheme -eq 'Black') { '#2D2D2D' } else { '#FFFFFF' }
             $TableBorderColor = if ($DiagramTheme -eq 'Black') { '#AAAAAA' } else { '#333333' }
+            # $Global:Orientation is set by New-AsBuiltReport (Core); swap the graph's max bounding box to match the page's own portrait/landscape flip.
+            $MainGraphSize = if ($Global:Orientation -eq 'Landscape') { '9,6.5' } else { '6.5,9' }
 
-            $ModuleBase = (Get-Module -Name 'AsBuiltReport.Microsoft.Azure').ModuleBase
-            $IconPath = [System.IO.FileInfo](Join-Path $ModuleBase 'Icons')
+            # $IconPath is computed once in Invoke-AsBuiltReport.Microsoft.Azure.ps1 and inherited here
             $ImagesObj = @{
                 'MG' = 'management-groups.png'
                 'Sub' = 'subscriptions.png'
@@ -67,8 +66,7 @@ function Get-AbrDiagAzManagementGroup {
             }
 
             # Build PSGraph content — no outer graph{} wrapper.
-            # Each MG is a simple icon node. Subscriptions are SEPARATE collection nodes
-            # connected by edges so Graphviz places them at the same rank as sibling child MGs.
+            # Each MG is a simple icon node. Subscriptions are SEPARATE collection nodes connected by edges so Graphviz places them at the same rank as sibling child MGs.
             $DiagramGraph = & {
                 # MG nodes — all rendered as simple icon + name nodes
                 foreach ($MgInfo in $MgList) {
@@ -86,8 +84,7 @@ function Get-AbrDiagAzManagementGroup {
                         -NodeObject
                 }
 
-                # Subscription collection nodes — one per MG that has direct subscriptions.
-                # Kept separate so Graphviz ranks them alongside sibling child MGs.
+                # Subscription collection nodes — one per MG that has direct subscriptions. Kept separate so Graphviz ranks them alongside sibling child MGs.
                 foreach ($MgInfo in $MgList) {
                     if (-not $HasSubsInSubtree.Contains($MgInfo.Id)) { continue }
                     if ($MgInfo.Subscriptions.Count -eq 0) { continue }
@@ -132,9 +129,10 @@ function Get-AbrDiagAzManagementGroup {
                 -MainDiagramLabel $LocalizedData.DiagramHeading `
                 -IconPath $IconPath `
                 -ImagesObj $ImagesObj `
-                -MainGraphSize '6.5,9' `
+                -MainGraphSize $MainGraphSize `
                 -Dpi $DiagramDpi `
-                -DisableMainDiagramLogo
+                -EdgeType 'spline' `
+                -LogoName 'NoIcon'
             if ($DiagramResult) {
                 Image -Base64 $DiagramResult -Text $LocalizedData.DiagramAltText -Percent $DiagramPercent
                 BlankLine

@@ -64,6 +64,11 @@ function Invoke-AsBuiltReport.Microsoft.Azure {
     # Used to set values to TitleCase where required
     $TextInfo = (Get-Culture).TextInfo
 
+    # Shared icon path for all diagram builder functions (Get-AbrDiagAz*), computed once here
+    # rather than in each diagram function individually
+    $ModuleBase = (Get-Module -Name 'AsBuiltReport.Microsoft.Azure').ModuleBase
+    $IconPath = [System.IO.FileInfo](Join-Path $ModuleBase 'Icons')
+
     # Define default section order if not specified in config
     $DefaultSectionOrder = @(
         "ApplicationGateway",

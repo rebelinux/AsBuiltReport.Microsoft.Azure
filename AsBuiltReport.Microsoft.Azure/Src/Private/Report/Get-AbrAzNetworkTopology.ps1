@@ -56,15 +56,30 @@ function Get-AbrAzNetworkTopology {
                         foreach ($Peering in $Peerings) {
                             if (-not $Peering.RemoteVirtualNetwork.Id) { continue }
                             $EdgeKey = (@($VNet.Id.ToLower(), $Peering.RemoteVirtualNetwork.Id.ToLower()) | Sort-Object) -join '|'
-                            $IsConnected = $Peering.PeeringState -eq 'Connected'
+                            # Severity ranking used when both sides of a peering report a different
+                            # state: the worst-case state wins (Disconnected > Initiated > Connected),
+                            # any unrecognised state is treated as Disconnected for safety.
+                            $StateSeverity = switch ($Peering.PeeringState) {
+                                'Connected' { 1 }
+                                'Initiated' { 2 }
+                                default { 3 }
+                            }
+                            $NormalizedState = switch ($Peering.PeeringState) {
+                                'Connected' { 'Connected' }
+                                'Initiated' { 'Initiated' }
+                                default { 'Disconnected' }
+                            }
                             if ($PeeringEdgeMap.ContainsKey($EdgeKey)) {
-                                # If either side reports a non-Connected state, treat the whole edge as disconnected.
-                                $PeeringEdgeMap[$EdgeKey].Connected = ($PeeringEdgeMap[$EdgeKey].Connected -and $IsConnected)
+                                if ($StateSeverity -gt $PeeringEdgeMap[$EdgeKey].StateSeverity) {
+                                    $PeeringEdgeMap[$EdgeKey].State = $NormalizedState
+                                    $PeeringEdgeMap[$EdgeKey].StateSeverity = $StateSeverity
+                                }
                             } else {
                                 $PeeringEdgeMap[$EdgeKey] = [PSCustomObject]@{
-                                    SourceId  = $VNet.Id
-                                    TargetId  = $Peering.RemoteVirtualNetwork.Id
-                                    Connected = $IsConnected
+                                    SourceId      = $VNet.Id
+                                    TargetId      = $Peering.RemoteVirtualNetwork.Id
+                                    State         = $NormalizedState
+                                    StateSeverity = $StateSeverity
                                 }
                             }
                         }

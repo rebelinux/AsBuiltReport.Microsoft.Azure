@@ -12,7 +12,7 @@
 RootModule = 'AsBuiltReport.Microsoft.Azure.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.3.0'
+ModuleVersion = '0.3.1'
 
 # Supported PSEditions
 CompatiblePSEditions = @('Desktop', 'Core')
@@ -58,7 +58,7 @@ RequiredModules = @(
         },
         @{
             ModuleName = 'AsBuiltReport.Diagram';
-            ModuleVersion = '1.0.8'
+            ModuleVersion = '1.0.9'
         }
     )
 
