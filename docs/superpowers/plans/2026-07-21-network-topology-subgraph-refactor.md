@@ -21,157 +21,11 @@
 
 ---
 
-### Task 1: Build a Graphviz-free smoke-test harness with synthetic fixtures
+### Task 1: Dropped — Graphviz-free smoke-test harness abandoned
 
-**Files:**
-- Create: `Tests/Manual/Test-NetworkTopologyDiagramLayout.ps1`
+**Status: abandoned 2026-07-21, not attempted again.** The plan originally called for a synthetic-fixture harness that ran `Get-AbrDiagAzNetworkTopology` with `New-AbrDiagram` shadowed to force `-Format dot`, on the premise that dot-format output needs no Graphviz install. That premise held for the recursion problem (fixed: invoking the real cmdlet via `& (Get-Module AsBuiltReport.Diagram) { New-AbrDiagram @args } @params` — module-scope invocation — avoids the name-based re-dispatch that a global-shadow-plus-`Get-Command`-delegate, or even invoking `.ScriptBlock` directly, both recurse into infinitely) but not for Graphviz itself: this installed PSGraph version (2.1.38.27) `Export-PSGraph` unconditionally shells out to a real `dot.exe` and throws `Could not find GraphViz installed on this system...` even when `-OutputFormat 'dot'` is requested — confirmed by direct reproduction. Since Graphviz isn't installed in this environment, no dot-format harness can run end-to-end here regardless of the recursion fix.
 
-**Interfaces:**
-- Consumes: `Get-AbrDiagAzNetworkTopology` (dot-sourced directly from `AsBuiltReport.Microsoft.Azure/Src/Private/Diagram/Get-AbrDiagAzNetworkTopology.ps1`), `AsBuiltReport.Diagram`'s exported `SubGraph`/`Edge`/`Add-HtmlNodeTable`/`New-AbrDiagram`/`Graph` commands.
-- Produces: a `.dot` text file at `$env:TEMP\NetworkTopologySmokeTest.dot` that Task 3 greps for structural assertions. No other task consumes this script's PowerShell-level return value.
-
-This harness lets the diagram-building logic run and be inspected without Graphviz installed (`New-AbrDiagram`'s `-Format base64` path renders through Graphviz's `dot.exe`, which requires Graphviz to be installed; `-Format dot` only serializes the PSGraph DSL to text and does not invoke `dot.exe`). Since the target function hardcodes `-Format base64`, the harness shadows `New-AbrDiagram` with a global proxy that forces `dot` format — this only affects calls made from the harness's own PowerShell session, and does not touch the production file.
-
-- [ ] **Step 1: Create the `Tests/Manual` directory and write the harness script**
-
-```powershell
-# Tests/Manual/Test-NetworkTopologyDiagramLayout.ps1
-# Manual dev tool: renders Get-AbrDiagAzNetworkTopology against synthetic data to a
-# Graphviz DOT text file, without needing Azure or Graphviz installed. Not part of CI.
-[CmdletBinding()]
-param(
-    [string] $OutputPath = (Join-Path ([System.IO.Path]::GetTempPath()) 'NetworkTopologySmokeTest.dot')
-)
-
-$RepoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$DiagramFunctionPath = Join-Path $RepoRoot 'AsBuiltReport.Microsoft.Azure\Src\Private\Diagram\Get-AbrDiagAzNetworkTopology.ps1'
-$IconPath = Join-Path $RepoRoot 'AsBuiltReport.Microsoft.Azure\Icons'
-
-Import-Module AsBuiltReport.Diagram -RequiredVersion 1.0.9 -Force -ErrorAction Stop
-
-# Stub PScribo output cmdlets so the function can run without an active PScribo Document context.
-# Parameter names match exactly what Get-AbrDiagAzNetworkTopology.ps1 calls today
-# (Write-PScriboMessage -IsWarning <string>; Image -Base64 <string> -Text <string> -Percent <int>;
-# BlankLine with no args) - ValueFromRemainingArguments does NOT catch unknown *named* arguments,
-# only excess positional ones, so the stubs must declare these parameters explicitly.
-function global:Write-PScriboMessage { param($IsWarning) }
-function global:Image { param($Base64, $Text, $Percent) }
-function global:BlankLine { param() }
-
-# Shadow New-AbrDiagram to force 'dot' output (no Graphviz binary required) regardless of the
-# '-Format base64' the production function passes.
-function global:New-AbrDiagram {
-    param(
-        $InputObject,
-        [Array] $Format,
-        [string] $MainDiagramLabel,
-        $IconPath,
-        [hashtable] $ImagesObj,
-        [string] $MainGraphSize,
-        [int] $Dpi,
-        [string] $EdgeType,
-        [string] $LogoName
-    )
-    $RealCmd = Get-Command New-AbrDiagram -Module AsBuiltReport.Diagram
-    & $RealCmd -InputObject $InputObject -Format 'dot' -MainDiagramLabel $MainDiagramLabel `
-        -IconPath $IconPath -ImagesObj $ImagesObj -MainGraphSize $MainGraphSize -Dpi $Dpi `
-        -EdgeType $EdgeType -LogoName $LogoName -OutputFolderPath ([System.IO.Path]::GetTempPath()) `
-        -Filename 'NetworkTopologySmokeTest'
-}
-
-$reportTranslate = [PSCustomObject]@{
-    GetAbrAzNetworkTopology = [PSCustomObject]@{
-        DiagramHeading = 'Virtual Network Hub-Spoke Topology'
-        DiagramAltText = 'Azure virtual network hub-and-spoke topology diagram'
-        UnknownRegion  = 'Unknown Region'
-        AddressSpace   = 'Address Space'
-        Role           = 'Role'
-        Hub            = 'Hub'
-        Spoke          = 'Spoke'
-        Gateway        = 'Gateway'
-        Firewall       = 'Firewall'
-        Nva            = 'NVA'
-        Connected      = 'Connected'
-        Initiated      = 'Initiated'
-        Disconnected   = 'Disconnected'
-    }
-}
-$Diagram = [PSCustomObject]@{
-    NetworkTopology = [PSCustomObject]@{ Enabled = $true; Theme = 'White'; Dpi = 96; Columns = 3 }
-}
-$Global:Orientation = 'Portrait'
-
-function New-TestVNet {
-    param($Id, $Name, $Location, $Subscription, $AddressSpace, $IsHub, $HasGateway = $false, $HasFirewall = $false, $HasNva = $false)
-    [PSCustomObject]@{
-        Id           = $Id
-        Name         = $Name
-        Location     = $Location
-        Subscription = $Subscription
-        AddressSpace = $AddressSpace
-        IsHub        = $IsHub
-        HasGateway   = $HasGateway
-        HasFirewall  = $HasFirewall
-        HasNva       = $HasNva
-    }
-}
-
-$VNets = @(
-    New-TestVNet -Id '/sub/hub-sub/hub-vnet-01' -Name 'hub-vnet-01' -Location 'Australia East' -Subscription 'Hub-Sub' -AddressSpace '10.0.0.0/16' -IsHub $true -HasGateway $true -HasFirewall $true
-    New-TestVNet -Id '/sub/spoke-sub-a/spoke-vnet-01' -Name 'spoke-vnet-01' -Location 'Australia East' -Subscription 'Spoke-Sub-A' -AddressSpace '10.1.0.0/24' -IsHub $false
-    New-TestVNet -Id '/sub/spoke-sub-a/spoke-vnet-02' -Name 'spoke-vnet-02' -Location 'Australia East' -Subscription 'Spoke-Sub-A' -AddressSpace '10.2.0.0/24' -IsHub $false
-    New-TestVNet -Id '/sub/spoke-sub-b/spoke-vnet-03' -Name 'spoke-vnet-03' -Location 'Australia East' -Subscription 'Spoke-Sub-B' -AddressSpace '10.3.0.0/24' -IsHub $false
-    New-TestVNet -Id '/sub/spoke-sub-c/spoke-vnet-04' -Name 'spoke-vnet-04' -Location 'Australia East' -Subscription 'Spoke-Sub-C' -AddressSpace '10.4.0.0/24' -IsHub $false
-    New-TestVNet -Id '/sub/spoke-sub-d/spoke-vnet-05' -Name 'spoke-vnet-05' -Location 'Australia East' -Subscription 'Spoke-Sub-D' -AddressSpace '10.5.0.0/24' -IsHub $false
-    New-TestVNet -Id '/sub/multi-hub-sub/hub-vnet-02' -Name 'hub-vnet-02' -Location 'Australia Southeast' -Subscription 'Multi-Hub-Sub' -AddressSpace '10.10.0.0/16' -IsHub $true -HasNva $true
-    New-TestVNet -Id '/sub/multi-hub-sub/hub-vnet-03' -Name 'hub-vnet-03' -Location 'Australia Southeast' -Subscription 'Multi-Hub-Sub' -AddressSpace '10.11.0.0/16' -IsHub $true -HasNva $true
-    New-TestVNet -Id '/sub/spoke-sub-e/spoke-vnet-06' -Name 'spoke-vnet-06' -Location 'Australia Southeast' -Subscription 'Spoke-Sub-E' -AddressSpace '10.20.0.0/24' -IsHub $false
-)
-
-$PeeringEdges = @(
-    [PSCustomObject]@{ SourceId = '/sub/hub-sub/hub-vnet-01'; TargetId = '/sub/spoke-sub-a/spoke-vnet-01'; State = 'Connected' }
-    [PSCustomObject]@{ SourceId = '/sub/hub-sub/hub-vnet-01'; TargetId = '/sub/spoke-sub-a/spoke-vnet-02'; State = 'Connected' }
-    [PSCustomObject]@{ SourceId = '/sub/hub-sub/hub-vnet-01'; TargetId = '/sub/spoke-sub-b/spoke-vnet-03'; State = 'Initiated' }
-    [PSCustomObject]@{ SourceId = '/sub/hub-sub/hub-vnet-01'; TargetId = '/sub/spoke-sub-c/spoke-vnet-04'; State = 'Disconnected' }
-    [PSCustomObject]@{ SourceId = '/sub/hub-sub/hub-vnet-01'; TargetId = '/sub/spoke-sub-d/spoke-vnet-05'; State = 'Connected' }
-    [PSCustomObject]@{ SourceId = '/sub/multi-hub-sub/hub-vnet-02'; TargetId = '/sub/spoke-sub-e/spoke-vnet-06'; State = 'Connected' }
-)
-
-. $DiagramFunctionPath
-Get-AbrDiagAzNetworkTopology -VNets $VNets -PeeringEdges $PeeringEdges
-
-$GeneratedDot = Join-Path ([System.IO.Path]::GetTempPath()) 'NetworkTopologySmokeTest.dot'
-if (Test-Path $GeneratedDot) {
-    Copy-Item -Path $GeneratedDot -Destination $OutputPath -Force
-    Write-Host "DOT output written to: $OutputPath"
-} else {
-    throw 'No .dot file was produced - the diagram function likely threw before calling New-AbrDiagram.'
-}
-```
-
-- [ ] **Step 2: Run the harness against the current (pre-refactor) code as a baseline**
-
-```powershell
-pwsh -NoProfile -File Tests/Manual/Test-NetworkTopologyDiagramLayout.ps1 -OutputPath "$env:TEMP\NetworkTopology-before.dot"
-```
-
-Expected: `DOT output written to: ...\NetworkTopology-before.dot`, no errors. This confirms the harness itself works end-to-end before any refactor code is touched, and gives a baseline file for comparison after Task 2.
-
-- [ ] **Step 3: Confirm the baseline reflects today's real-cluster structure**
-
-```powershell
-(Select-String -Path "$env:TEMP\NetworkTopology-before.dot" -Pattern 'ltail').Count
-(Select-String -Path "$env:TEMP\NetworkTopology-before.dot" -Pattern 'subgraph cluster').Count
-```
-
-Expected: the `ltail` count is greater than 0 (today's cluster-clipped edges), and the `subgraph cluster` count is `12` (today's per-Subscription real clusters: the fixture's 7 Subscriptions — `Hub-Sub`, `Spoke-Sub-A`, `Spoke-Sub-B`, `Spoke-Sub-C`, `Spoke-Sub-D`, `Multi-Hub-Sub`, `Spoke-Sub-E` — + 2 Regions + 3 fixed wrapper clusters from `New-AbrDiagram` = 12). These two numbers are what Task 3 checks flip to (0 and 5) after the refactor — this step just records that the harness is exercising the real pre-refactor code path.
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add Tests/Manual/Test-NetworkTopologyDiagramLayout.ps1
-git commit -m "Add manual smoke-test harness for Network Topology diagram layout"
-```
+Given that, the user chose to drop the automated harness entirely rather than install Graphviz system-wide (PSGraph's own `Install-GraphViz` helper registers a Chocolatey provider and installs a package — a real system-level change) or hunt for a portable Graphviz binary. Task 2 proceeds directly from the plan's already-fully-specified replacement file (it never depended on the harness to exist — the harness was verification tooling, not an implementation dependency). Task 3 drops the harness-based structural assertions (Steps 1-4 in the original plan) in favor of PSScriptAnalyzer + Pester syntax checks plus the manual visual pass already documented under "Manual Follow-Up" below.
 
 ---
 
@@ -518,51 +372,15 @@ git commit -m "Refactor Network Topology diagram to use Add-HtmlNodeTable -Subgr
 
 ---
 
-### Task 3: Verify the refactor structurally, lint, and update the changelog
+### Task 3: Verify the refactor via lint/syntax checks, and update the changelog
 
 **Files:**
-- Test: `Tests/Manual/Test-NetworkTopologyDiagramLayout.ps1` (created in Task 1, run only — not modified)
 - Modify: `CHANGELOG.md`
 
 **Interfaces:**
-- Consumes: the `.dot` output produced by re-running Task 1's harness against the Task 2 code.
+- None — the Task 1 harness was dropped (see above), so this task relies only on static checks (PSScriptAnalyzer, Pester syntax validation) and the separately-tracked manual visual pass.
 
-- [ ] **Step 1: Re-run the harness against the refactored code**
-
-```powershell
-pwsh -NoProfile -File Tests/Manual/Test-NetworkTopologyDiagramLayout.ps1 -OutputPath "$env:TEMP\NetworkTopology-after.dot"
-```
-
-Expected: `DOT output written to: ...\NetworkTopology-after.dot`, no errors.
-
-- [ ] **Step 2: Assert `ltail`/`lhead` are gone**
-
-```powershell
-(Select-String -Path "$env:TEMP\NetworkTopology-after.dot" -Pattern 'ltail|lhead').Count
-```
-
-Expected: `0`
-
-- [ ] **Step 3: Assert the per-Subscription real clusters are gone**
-
-```powershell
-(Select-String -Path "$env:TEMP\NetworkTopology-after.dot" -Pattern 'subgraph cluster').Count
-```
-
-Expected: `5` — 2 Region clusters (`Region_AustraliaEast`, `Region_AustraliaSoutheast`) + 3 fixed wrapper clusters `New-AbrDiagram` always emits (`OUTERDRAWBOARD1`, `MainGraph`, `NetworkTopologyLegend`). Compare against Task 1 Step 3's pre-refactor count (12 in the same fixture: 7 Subscriptions + 2 Regions + 3 fixed) to confirm the 7 per-Subscription clusters were eliminated.
-
-- [ ] **Step 4: Assert every Subscription box got the subscription icon and every grouped VNet got its own port**
-
-```powershell
-(Select-String -Path "$env:TEMP\NetworkTopology-after.dot" -Pattern 'subscriptions\.png').Count
-(Select-String -Path "$env:TEMP\NetworkTopology-after.dot" -Pattern 'Icon_hub-vnet-02').Count
-(Select-String -Path "$env:TEMP\NetworkTopology-after.dot" -Pattern 'Icon_hub-vnet-03').Count
-(Select-String -Path "$env:TEMP\NetworkTopology-after.dot" -Pattern 'Icon_spoke-vnet-01').Count
-```
-
-Expected: the `subscriptions.png` count is `7` — one per Subscription box in the fixture (`Hub-Sub`, `Spoke-Sub-A`, `Spoke-Sub-B`, `Spoke-Sub-C`, `Spoke-Sub-D`, `Multi-Hub-Sub`, `Spoke-Sub-E`). Both `Icon_hub-vnet-02` and `Icon_hub-vnet-03` are found at least once (confirms the multi-hub `-MultiIcon` path emits per-VNet ports), and `Icon_spoke-vnet-01` is found at least once (confirms the existing multi-spoke path still does).
-
-- [ ] **Step 5: Run PSScriptAnalyzer**
+- [ ] **Step 1: Run PSScriptAnalyzer**
 
 ```powershell
 Invoke-ScriptAnalyzer -Path AsBuiltReport.Microsoft.Azure/Src/Private/Diagram/Get-AbrDiagAzNetworkTopology.ps1 -Settings .github/workflows/PSScriptAnalyzerSettings.psd1
@@ -570,7 +388,7 @@ Invoke-ScriptAnalyzer -Path AsBuiltReport.Microsoft.Azure/Src/Private/Diagram/Ge
 
 Expected: no output (no findings). If findings appear, fix them before proceeding.
 
-- [ ] **Step 6: Run the existing Pester suite**
+- [ ] **Step 2: Run the existing Pester suite**
 
 ```powershell
 Invoke-Pester -Path Tests/ -Output Detailed
@@ -578,7 +396,7 @@ Invoke-Pester -Path Tests/ -Output Detailed
 
 Expected: all tests pass, including `Should have valid PowerShell syntax in all script files` (covers this file generically).
 
-- [ ] **Step 7: Update CHANGELOG.md**
+- [ ] **Step 3: Update CHANGELOG.md**
 
 In `CHANGELOG.md`, under `## [0.3.1] - 2026-07-??` → `### Fixed`, add a new bullet after the existing `Get-AbrDiagAzManagementGroup` / `Get-AbrDiagAzNetworkTopology` logo bullet:
 
@@ -586,7 +404,7 @@ In `CHANGELOG.md`, under `## [0.3.1] - 2026-07-??` → `### Fixed`, add a new bu
 * Fix `Get-AbrDiagAzNetworkTopology` - Misaligned VNet information within each Subscription box, caused by wrapping a real Graphviz cluster around a separate HTML-table node; each Subscription is now a single `Add-HtmlNodeTable -Subgraph` node (matching `Get-AbrDiagAzManagementGroup`'s existing pattern), and peering edges now attach to each VNet's own port instead of the removed cluster boundary
 ```
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add CHANGELOG.md
