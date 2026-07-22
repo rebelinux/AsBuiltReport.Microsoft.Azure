@@ -44,6 +44,7 @@ function Get-AbrDiagAzNetworkTopology {
                 'Gateway'  = 'virtual-network-gateways.png'
                 'Firewall' = 'firewalls.png'
                 'Sub'      = 'subscriptions.png'
+                'Region'   = 'region-management.png'
                 'Blank'    = 'blank.png'
             }
             $ColumnSize = if ($Diagram.NetworkTopology.Columns -and [int]$Diagram.NetworkTopology.Columns -gt 0) { [int]$Diagram.NetworkTopology.Columns } else { 3 }
@@ -68,7 +69,7 @@ function Get-AbrDiagAzNetworkTopology {
 
                     foreach ($RegionName in $AllRegionNames) {
                         $SafeRegionId = 'Region_' + ($RegionName -replace '[^a-zA-Z0-9]', '_')
-                        $RegionLabel = '<table border="0" cellborder="0"><tr><td><b>{0}</b></td></tr></table>' -f $RegionName
+                        $RegionLabel = '<table border="0" cellborder="0"><tr><td align="center" fixedsize="true" width="40" height="40"><img src="{0}"/></td></tr><tr><td align="center"><b>{1}</b></td></tr></table>' -f $ImagesObj['Region'], $RegionName
                         SubGraph $SafeRegionId -Attributes @{ Label = $RegionLabel; fontsize = 16; fontcolor = $FontColor; penwidth = 1; labelloc = 't'; labeljust = 'c'; style = 'dashed,rounded'; color = $TableBorderColor } {
                             # Hubs are grouped by Subscription the same way spokes are below: one combined node per hub-Subscription, using -MultiIcon when that subscription has more than one hub VNet.
                             $HubGroup = $HubsByRegion | Where-Object { $_.Name -eq $RegionName }
