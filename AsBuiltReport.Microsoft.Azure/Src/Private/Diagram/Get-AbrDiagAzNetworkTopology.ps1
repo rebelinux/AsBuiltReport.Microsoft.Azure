@@ -110,6 +110,9 @@ function Get-AbrDiagAzNetworkTopology {
                                             -FontColor $FontColor `
                                             -CellBackgroundColor $CellBgColor `
                                             -TableBorderColor $TableBorderColor `
+                                            -TableBorder 1 `
+                                            -CellBorder 0 `
+                                            -SubgraphTableStyle 'dashed,rounded' `
                                             -Subgraph `
                                             -SubgraphLabel $HubSubscriptionGroup.Name `
                                             -SubgraphIconType 'Sub' `
@@ -159,6 +162,9 @@ function Get-AbrDiagAzNetworkTopology {
                                             -FontColor $FontColor `
                                             -CellBackgroundColor $CellBgColor `
                                             -TableBorderColor $TableBorderColor `
+                                            -TableBorder 1 `
+                                            -CellBorder 0 `
+                                            -SubgraphTableStyle 'dashed,rounded' `
                                             -Subgraph `
                                             -SubgraphLabel $HubSubscriptionGroup.Name `
                                             -SubgraphIconType 'Sub' `
@@ -202,6 +208,9 @@ function Get-AbrDiagAzNetworkTopology {
                                             -FontColor $FontColor `
                                             -CellBackgroundColor $CellBgColor `
                                             -TableBorderColor $TableBorderColor `
+                                            -TableBorder 1 `
+                                            -CellBorder 0 `
+                                            -SubgraphTableStyle 'dashed,rounded' `
                                             -Subgraph `
                                             -SubgraphLabel $SubscriptionGroup.Name `
                                             -SubgraphIconType 'Sub' `
@@ -242,6 +251,9 @@ function Get-AbrDiagAzNetworkTopology {
                                             -FontColor $FontColor `
                                             -CellBackgroundColor $CellBgColor `
                                             -TableBorderColor $TableBorderColor `
+                                            -TableBorder 1 `
+                                            -CellBorder 0 `
+                                            -SubgraphTableStyle 'dashed,rounded' `
                                             -Subgraph `
                                             -SubgraphLabel $SubscriptionGroup.Name `
                                             -SubgraphIconType 'Sub' `
