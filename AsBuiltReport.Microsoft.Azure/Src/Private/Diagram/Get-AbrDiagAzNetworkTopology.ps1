@@ -54,7 +54,7 @@ function Get-AbrDiagAzNetworkTopology {
                     $Hubs = @($VNets | Where-Object { $_.IsHub })
                     $Spokes = @($VNets | Where-Object { -not $_.IsHub })
 
-                    # Maps each VNet's resource ID to a port-specific reference into its Subscription's shared HTML table node (Graphviz's "<node>":"<port>":<compass> syntax): a single-VNet Subscription box references the VNet's name-cell port ("<SubId>":"<VNetName>"), a grouped (-MultiIcon) box references that VNet's own icon-cell port ("<SubId>":"Icon_<VNetName>") - each emitted by Add-HtmlNodeTable per element, giving every peering edge a distinct landing point even within a grouped box instead of a generic whole-node compass point. The trailing :s (hub) / :n (spoke) compass keeps edges exiting the bottom of hub boxes and entering the top of spoke boxes, matching the diagram's hub-above/spoke-below layout.
+                    # Maps each VNet's resource ID to a whole-box reference into its Subscription's shared HTML table node (Graphviz's "<node>":<compass> syntax, no port): every VNet in the same Subscription box - whether it's the only one or one of several under -MultiIcon - resolves to the same box-level reference, so an edge always lands on the box's own bounding-box edge rather than a specific VNet's cell inside it. The :s (hub) / :n (spoke) compass keeps edges exiting the bottom of hub boxes and entering the top of spoke boxes, matching the diagram's hub-above/spoke-below layout and the pre-Subgraph-refactor cluster behavior. Because multiple VNets can share one box-level ref, two VNet pairs that peer between the same two Subscription boxes collapse to a single drawn edge via $DrawnPairs below - intentional, matching how the previous real-cluster design (with ltail/lhead clipped to the cluster boundary) already deduped on the same cluster-to-cluster basis.
                     $NodeRef = @{}
                     # IDs of VNets whose subscription box sits in row 2+ of its region (position already fully determined by the column-chain invisible edges below). A real hub-to-spoke edge that skips straight to one of these deep boxes gets constraint=false when drawn (below), so it still renders as a visible line but is excluded from dot's rank/order decisions - without this, that edge competes with the column-chain for influence over layout and visibly distorts both the hub's horizontal centering and the edge's own routing.
                     $DeepRowNodeIds = [System.Collections.Generic.HashSet[string]]::new()
@@ -81,7 +81,7 @@ function Get-AbrDiagAzNetworkTopology {
                                         # Add-HtmlNodeTable's -MultiIcon + -AditionalInfo (array-valued) combination mis-renders when there is only a single element - each array is stringified as its .NET type name (e.g. "System.Object[]") instead of its value. A subscription with a single hub is rendered as a simple non-MultiIcon node instead, the same proven way a single spoke is handled below.
                                         $VNet = $HubSubscriptionGroup.Group[0]
                                         $HubLabel = ($VNet.Name -replace '"', '')
-                                        $NodeRef[$VNet.Id.ToLower()] = '"{0}":"{1}":s' -f $SafeHubSubscriptionId, $HubLabel
+                                        $NodeRef[$VNet.Id.ToLower()] = '"{0}":s' -f $SafeHubSubscriptionId
 
                                         $RoleBadges = [System.Collections.Generic.List[string]]::new()
                                         if ($VNet.HasGateway) { [void]$RoleBadges.Add($LocalizedData.Gateway) }
@@ -141,7 +141,7 @@ function Get-AbrDiagAzNetworkTopology {
                                             }
                                             [void]$HubRoles.Add($RoleText)
 
-                                            $NodeRef[$VNet.Id.ToLower()] = '"{0}":"Icon_{1}":s' -f $SafeHubSubscriptionId, $HubLabel
+                                            $NodeRef[$VNet.Id.ToLower()] = '"{0}":s' -f $SafeHubSubscriptionId
                                         }
 
                                         $HubInfo = [Ordered]@{
@@ -191,7 +191,7 @@ function Get-AbrDiagAzNetworkTopology {
                                         # Add-HtmlNodeTable's -MultiIcon + -AditionalInfo (array-valued) combination mis-renders when there is only a single element - each array is stringified as its .NET type name (e.g. "System.Object[]") instead of its value. A lone spoke is rendered as a simple non-MultiIcon node instead.
                                         $VNet = $SubscriptionGroup.Group[0]
                                         $SpokeLabel = ($VNet.Name -replace '"', '')
-                                        $NodeRef[$VNet.Id.ToLower()] = '"{0}":"{1}":n' -f $SafeSubscriptionId, $SpokeLabel
+                                        $NodeRef[$VNet.Id.ToLower()] = '"{0}":n' -f $SafeSubscriptionId
                                         if ($SubIndex -ge $ColumnSize) { [void]$DeepRowNodeIds.Add($VNet.Id.ToLower()) }
                                         $SpokeNodeInfo = [Ordered]@{
                                             $LocalizedData.AddressSpace = $VNet.AddressSpace
@@ -228,7 +228,7 @@ function Get-AbrDiagAzNetworkTopology {
                                             [void]$SpokeLabels.Add($SpokeLabel)
                                             [void]$SpokeAddressSpaces.Add($VNet.AddressSpace)
                                             [void]$SpokeRoles.Add($LocalizedData.Spoke)
-                                            $NodeRef[$VNet.Id.ToLower()] = '"{0}":"Icon_{1}":n' -f $SafeSubscriptionId, $SpokeLabel
+                                            $NodeRef[$VNet.Id.ToLower()] = '"{0}":n' -f $SafeSubscriptionId
                                             if ($SubIndex -ge $ColumnSize) { [void]$DeepRowNodeIds.Add($VNet.Id.ToLower()) }
                                         }
 
