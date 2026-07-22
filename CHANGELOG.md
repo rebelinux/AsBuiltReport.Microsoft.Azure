@@ -5,7 +5,7 @@
 ### Added
 * Add support for Virtual Network hub-spoke topology diagram
 * Add a colour-coded legend to the Network Topology diagram explaining the Connected/Initiated/Disconnected peering-state edge colours
-* Add region and subscription grouping to the Network Topology diagram - hubs and spokes are each clustered by Azure region, and by subscription within each region, instead of one flat grid; peering edges attach to the bottom-center of the hub's subscription box and the top-center of the spoke's subscription box; `Diagram.NetworkTopology.Columns` now also caps how many subscription boxes appear per row within a region
+* Add region and subscription grouping to the Network Topology diagram - hubs and spokes are each clustered by Azure region, and by subscription within each region, instead of one flat grid; `Diagram.NetworkTopology.Columns` now also caps how many subscription boxes appear per row within a region (see the `### Fixed` entry below for how peering edges attach to each Subscription box)
 
 ### Changed
 * Extract NVA detection logic shared by `Get-AbrAzNetworkVirtualAppliance` and `Get-AbrAzNetworkTopology` into `Test-AbrAzNvaVm`
