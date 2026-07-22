@@ -15,6 +15,7 @@
 ### Fixed
 * Fix `Get-AbrAzLbFrontendIpConfig` - Resolve `PublicIPAddress` to the associated public IP resource name
 * Fix `Get-AbrDiagAzManagementGroup` and `Get-AbrDiagAzNetworkTopology` - Replace `-DisableMainDiagramLogo` with `-LogoName 'NoIcon'` when calling `New-AbrDiagram`; the former blanked the entire diagram label (title text included, not just the logo image), so neither diagram showed a title
+* Fix `Get-AbrDiagAzNetworkTopology` - Misaligned VNet information within each Subscription box, caused by wrapping a real Graphviz cluster around a separate HTML-table node; each Subscription is now a single `Add-HtmlNodeTable -Subgraph` node (matching `Get-AbrDiagAzManagementGroup`'s existing pattern), and peering edges now attach to each VNet's own port instead of the removed cluster boundary
 
 ### Removed
 * Remove X/Tweet post action in `Release.yml` pipeline
