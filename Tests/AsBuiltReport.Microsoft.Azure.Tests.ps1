@@ -1333,7 +1333,7 @@ Describe 'Module File Syntax and Quality' {
 
         It 'Should have minimal PSScriptAnalyzer warnings' {
             try {
-                $AnalyzerResults = Invoke-ScriptAnalyzer -Path $ModuleRoot -Recurse -Severity Warning -ErrorAction SilentlyContinue
+                $AnalyzerResults = Invoke-ScriptAnalyzer -Path $ModuleRoot -Settings $SettingsPath -Recurse -Severity Warning -ErrorAction SilentlyContinue
             } catch {
                 $AnalyzerResults = @()
             }
