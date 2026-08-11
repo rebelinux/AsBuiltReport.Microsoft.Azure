@@ -404,6 +404,7 @@ GetAbrAzBastion = ConvertFrom-StringData @'
     Location = Emplacement
     Subscription = Abonnement
     SubscriptionID = ID d'abonnement
+    Tier = Étage
     ProvisioningState = Etat de provisionnement
     VirtualNetworkSubnet = Reseau virtuel / Sous-reseau
     PublicDnsName = Nom DNS public

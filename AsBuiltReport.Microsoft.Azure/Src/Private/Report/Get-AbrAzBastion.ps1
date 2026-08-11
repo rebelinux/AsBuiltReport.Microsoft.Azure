@@ -52,6 +52,7 @@ function Get-AbrAzBastion {
                                 $LocalizedData.Location = $AzLocationLookup."$($AzBastion.Location)"
                                 $LocalizedData.Subscription = "$($AzSubscriptionLookup.(($AzBastion.Id).split('/')[2]))"
                                 $LocalizedData.SubscriptionID = ($AzBastion.Id).split('/')[2]
+                                $LocalizedData.Tier = $AzBastion.Sku.Name
                                 $LocalizedData.ProvisioningState = $AzBastion.ProvisioningState
                                 $LocalizedData.VirtualNetworkSubnet = $(if ($AzBastion.IpConfigurations.subnet.id) { $AzBastion.IpConfigurations.subnet.id.split('/')[-1] } else { $LocalizedData.None })
                                 $LocalizedData.PublicDnsName = $AzBastion.DnsName
@@ -95,7 +96,7 @@ function Get-AbrAzBastion {
                             $TableParams = @{
                                 Name = "$($LocalizedData.TableHeadings) - $($AzSubscription.Name)"
                                 List = $false
-                                Columns = $LocalizedData.Name, $LocalizedData.ResourceGroup, $LocalizedData.Location, $LocalizedData.PublicIpAddress
+                                Columns = $LocalizedData.Name, $LocalizedData.ResourceGroup, $LocalizedData.Location, $LocalizedData.Tier
                                 ColumnWidths = 25, 25, 25, 25
                             }
                             if ($Report.ShowTableCaptions) {
